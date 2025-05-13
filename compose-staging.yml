@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  mysql-academic-staging:
+    image: mysql:9.0
+    container_name: mysql-academic-staging
+    environment:
+      # !! QUAN TRỌNG: Sử dụng Docker Secrets hoặc inject biến môi trường cho mật khẩu !!
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_DATABASE: academic_db
+      MYSQL_USER: user_staging # Có thể dùng user khác cho staging
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_user_password
+    volumes:
+      - mysql-academic-staging-data:/var/lib/mysql
+      # Có thể không cần init script nếu DB staging đã tồn tại hoặc có cơ chế migration khác
+      # - ./init-scripts/academic.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ./mysql-config/master-staging.cnf:/etc/mysql/conf.d/master.cnf # TODO: Tạo file cấu hình riêng cho master staging
+    secrets:
+      - mysql_root_password
+      - mysql_user_password
+    ports:
+      - "33161:3306" # Sử dụng port khác dev
+    healthcheck:
+      # Lưu ý: Healthcheck cần user/pass. Đảm bảo user/pass được tạo trước khi check hoặc dùng root.
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u$${MYSQL_USER:-root}", "-p$$(cat $${MYSQL_PASSWORD_FILE:-/run/secrets/mysql_root_password})" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s # Cho DB có thêm thời gian khởi động và tạo secrets
+
+  # TODO: Định nghĩa các service DB staging khác (faculty-it, faculty-tel, tuition, auth) tương tự mysql-academic-staging
+  # Nhớ sử dụng tên volume, container, config file, secrets riêng biệt cho từng service staging
+
+  academic-service:
+    container_name: academic-service-staging
+    build:
+      context: ./AcademicService # Đường dẫn đến thư mục chứa Dockerfile của AcademicService
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      # !! QUAN TRỌNG: Cung cấp ConnectionString qua biến môi trường hoặc secrets !!
+      # Cách 1: Inject biến môi trường từ bên ngoài (ví dụ: CI/CD)
+      # ConnectionStrings__DefaultConnection: "Server=mysql-academic-staging;Port=3306;Database=academic_db;Uid=user_staging;Pwd=$${DB_PASSWORD_SECRET}"
+      # Cách 2: Sử dụng Docker Secret (yêu cầu file secret chứa toàn bộ connection string hoặc chỉ mật khẩu)
+      ConnectionStrings__DefaultConnection__File: /run/secrets/app_db_connection_string
+      # Thêm các biến môi trường khác cần thiết cho staging (ví dụ: URL service khác)
+    ports:
+      - "8080:8080" # Map port của service ra ngoài nếu cần truy cập trực tiếp
+      - "8081:8081"
+    depends_on:
+      mysql-academic-staging:
+        condition: service_healthy
+    secrets:
+      - app_db_connection_string # Secret chứa toàn bộ connection string
+      # Hoặc - db_password_secret # Nếu bạn xây dựng connection string từ nhiều phần
+
+volumes:
+  mysql-academic-staging-data:
+  # TODO: Thêm các volume khác cho DB staging: mysql-faculty-it-staging-data, ...
+  mysql-faculty-it-staging-data:
+  mysql-faculty-tel-staging-data:
+  mysql-tuition-staging-data:
+  mysql-auth-staging-data:
+
+secrets:
+  mysql_root_password:
+    file: ./staging-secrets/mysql_root_password.txt # TODO: Tạo file này và KHÔNG commit
+  mysql_user_password:
+    file: ./staging-secrets/mysql_user_password.txt # TODO: Tạo file này và KHÔNG commit
+  app_db_connection_string:
+    file: ./staging-secrets/app_db_connection_string.txt # TODO: Tạo file này chứa conn string và KHÔNG commit
+
+# Lưu ý:
+# 1. Tạo thư mục staging-secrets và các file .txt chứa secrets tương ứng. KHÔNG commit thư mục này.
+# 2. Hoàn thiện định nghĩa cho các service DB staging còn lại.
+# 3. Cân nhắc sử dụng user/password khác nhau cho mỗi DB staging.
+# 4. Tạo các file cấu hình MySQL riêng cho staging nếu cần (ví dụ: master-staging.cnf).
+# 5. Đảm bảo cơ chế quản lý secrets (Docker Secrets hoặc inject biến môi trường) được triển khai đúng cách. 
