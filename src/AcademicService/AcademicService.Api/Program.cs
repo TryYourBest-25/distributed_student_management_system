@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AcademicService.Api.Exception;
@@ -13,7 +14,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Serilog.Core;
-using Shared;
+using Serilog.Exceptions;
 using Shared.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,7 +34,7 @@ builder.Services.Configure<RouteOptions>(options =>
     options.LowercaseUrls = true;
     options.LowercaseQueryStrings = true;
 });
-
+builder.Configuration.SetBasePath(AppContext.BaseDirectory);
 builder.Services.AddProblemDetails();
 
 builder.Services.AddExceptionHandler<ExceptionHandler>();
@@ -43,29 +44,26 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
 });
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApiDocument();
-
-builder.Services.Configure<JsonOptions>(options =>
-{
-    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
-});
 
 builder.Configuration.AddUserSecrets<Program>();
 
-builder.Configuration.AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true)
-    .AddJsonFile($"appsettings.shared.{builder.Environment.EnvironmentName}.json", optional: true)
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true);
+builder.Configuration.AddJsonFile($"appsettings.shared.{builder.Environment.EnvironmentName}.json", optional: true,
+    reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(MediatRLoggingBehavior<,>));
 builder.Services.AddDbContext<AcademicDbContext>();
 
-builder.Host.UseSerilog();
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration.ReadFrom.Configuration(context.Configuration);
+});
 
 var app = builder.Build();
-
-Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(app.Configuration).CreateLogger();
 
 app.UseSerilogRequestLogging(options =>
 {
@@ -78,12 +76,12 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseOpenApi();
     app.UseSwaggerUi();
     app.UseDeveloperExceptionPage();
+    Serilog.Debugging.SelfLog.Enable(Console.Error);
 }
 
 app.UseExceptionHandler();

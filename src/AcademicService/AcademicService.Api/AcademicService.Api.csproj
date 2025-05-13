@@ -10,6 +10,7 @@
     <ItemGroup>
         <PackageReference Include="Autofac" Version="8.2.1" />
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
+        <PackageReference Include="Elastic.Serilog.Sinks" Version="8.12.3" />
         <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3" />
         <PackageReference Include="FluentValidation" Version="11.11.0" />
         <PackageReference Include="Gridify.EntityFramework" Version="2.16.3" />
@@ -28,11 +29,23 @@
         <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
         <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1" />
         <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\AcademicService.Infrastructure\AcademicService.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\Shared\appsettings.shared.Development.json">
+        <Link>appsettings.shared.Development.json</Link>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\Shared\appsettings.shared.json">
+        <Link>appsettings.shared.json</Link>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>
