@@ -1,4 +1,4 @@
-namespace FacultyItService.Api;
+namespace FacultyService.Api;
 
 public class WeatherForecast
 {

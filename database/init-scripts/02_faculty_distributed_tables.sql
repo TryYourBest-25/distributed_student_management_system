@@ -11,13 +11,15 @@ CREATE TABLE class (
     academic_year_code VARCHAR(9) NOT NULL, 
     faculty_code VARCHAR(10) NOT NULL, -- Cột phân phối
     CONSTRAINT pk_class PRIMARY KEY (faculty_code, class_code),
-    CONSTRAINT fk_class_faculty FOREIGN KEY (faculty_code) REFERENCES faculty(faculty_code)
+    CONSTRAINT fk_class_faculty FOREIGN KEY (faculty_code) REFERENCES faculty(faculty_code),
+    CONSTRAINT fk_class_global_code FOREIGN KEY (class_code) REFERENCES global_class_code(class_code)
 );
 COMMENT ON TABLE class IS 'Bảng chứa thông tin các lớp học';
 COMMENT ON COLUMN class.class_code IS 'Mã lớp';
 COMMENT ON COLUMN class.class_name IS 'Tên lớp';
 COMMENT ON COLUMN class.academic_year_code IS 'Khóa học (ví dụ K60, D2020)';
 COMMENT ON COLUMN class.faculty_code IS 'Mã khoa (FK và cột phân phối)';
+
 
 -- Bảng Sinh viên (student)
 CREATE TABLE student (
@@ -31,7 +33,9 @@ CREATE TABLE student (
     is_suspended BOOLEAN DEFAULT FALSE,
     legacy_password VARCHAR(40),
     faculty_code VARCHAR(10) NOT NULL, 
-    CONSTRAINT pk_student PRIMARY KEY (faculty_code, student_code)
+    CONSTRAINT pk_student PRIMARY KEY (faculty_code, student_code),
+    CONSTRAINT fk_student_faculty_dist FOREIGN KEY (faculty_code) REFERENCES faculty(faculty_code),
+    CONSTRAINT fk_student_global_code FOREIGN KEY (student_code) REFERENCES global_student_code(student_code)
 );
 COMMENT ON TABLE student IS 'Bảng chứa thông tin sinh viên';
 COMMENT ON COLUMN student.student_code IS 'Mã sinh viên';
@@ -47,8 +51,6 @@ COMMENT ON COLUMN student.faculty_code IS 'Mã khoa của sinh viên (cột phâ
 
 ALTER TABLE student
     ADD CONSTRAINT fk_student_class FOREIGN KEY (faculty_code, class_code) REFERENCES class(faculty_code, class_code);
-ALTER TABLE student
-    ADD CONSTRAINT fk_student_faculty_dist FOREIGN KEY (faculty_code) REFERENCES faculty(faculty_code);
 
 -- Bảng Lớp tín chỉ (credit_class)
 CREATE TABLE credit_class (

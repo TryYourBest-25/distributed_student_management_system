@@ -84,21 +84,39 @@ COMMENT ON COLUMN role.role_id IS 'ID vai trò (tự động tăng)';
 COMMENT ON COLUMN role.role_name IS 'Tên vai trò (ví dụ: PGV, KHOA, SV, PKT)';
 COMMENT ON COLUMN role.description IS 'Mô tả vai trò';
 
--- Bảng Phân quyền Người dùng - Vai trò (user_role_assignment)
-CREATE TABLE user_role_assignment (
+-- Bảng Quyền (permission)
+CREATE TABLE permission (
     user_id INTEGER NOT NULL,
     role_id INTEGER NOT NULL,
-    CONSTRAINT pk_user_role_assignment PRIMARY KEY (user_id, role_id),
-    CONSTRAINT fk_user_role_user FOREIGN KEY (user_id) REFERENCES user_account(user_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_user_role_role FOREIGN KEY (role_id) REFERENCES role(role_id) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT pk_permission PRIMARY KEY (user_id, role_id),
+    CONSTRAINT fk_permission_user FOREIGN KEY (user_id) REFERENCES user_account(user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_permission_role FOREIGN KEY (role_id) REFERENCES role(role_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-COMMENT ON TABLE user_role_assignment IS 'Bảng liên kết người dùng với vai trò của họ';
-COMMENT ON COLUMN user_role_assignment.user_id IS 'ID người dùng (FK)';
-COMMENT ON COLUMN user_role_assignment.role_id IS 'ID vai trò (FK)';
+COMMENT ON TABLE permission IS 'Bảng phân quyền, liên kết người dùng với vai trò của họ (quan hệ nhiều-nhiều)';
+COMMENT ON COLUMN permission.user_id IS 'ID người dùng (FK)';
+COMMENT ON COLUMN permission.role_id IS 'ID vai trò (FK)';
+
+-- Bảng Mã Lớp Toàn Cục (global_class_codes)
+CREATE TABLE global_class_code (
+    class_code VARCHAR(10) NOT NULL,
+    CONSTRAINT pk_global_class_codes PRIMARY KEY (class_code)
+);
+COMMENT ON TABLE global_class_code IS 'Bảng lưu trữ các mã lớp đã sử dụng để đảm bảo tính duy nhất toàn cục';
+COMMENT ON COLUMN global_class_code.class_code IS 'Mã lớp (PK)';
+
+-- Bảng Mã Sinh Viên Toàn Cục (global_student_codes)
+CREATE TABLE global_student_code (
+    student_code VARCHAR(10) NOT NULL,
+    CONSTRAINT pk_global_student_codes PRIMARY KEY (student_code)
+);
+COMMENT ON TABLE global_student_code IS 'Bảng lưu trữ các mã sinh viên đã sử dụng để đảm bảo tính duy nhất toàn cục';
+COMMENT ON COLUMN global_student_code.student_code IS 'Mã sinh viên (PK)';
 
 SELECT create_reference_table('faculty');
 SELECT create_reference_table('course');
 SELECT create_reference_table('lecturer');
 SELECT create_reference_table('user_account');
 SELECT create_reference_table('role');
-SELECT create_reference_table('user_role_assignment'); 
+SELECT create_reference_table('permission');
+SELECT create_reference_table('global_class_code');
+SELECT create_reference_table('global_student_code');
