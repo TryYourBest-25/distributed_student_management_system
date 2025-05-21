@@ -1,6 +1,6 @@
 using AcademicService.Application.Faculty.Response;
-using AcademicService.Domain.ValueObject;
 using MediatR;
+using Shared.Domain.ValueObject;
 
 namespace AcademicService.Application.Faculty.Query;
 

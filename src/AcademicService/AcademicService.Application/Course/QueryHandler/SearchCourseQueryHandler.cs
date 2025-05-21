@@ -4,6 +4,7 @@ using AcademicService.Application.DbContext;
 using Gridify;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.Exception;
 using Shared.Infra.Entity;
 
 namespace AcademicService.Application.Course.QueryHandler;
@@ -18,6 +19,11 @@ public class SearchCourseQueryHandler : IRequestHandler<SearchCourseQuery, Pagin
     public async Task<Paging<CourseResponse>> Handle(SearchCourseQuery request, CancellationToken cancellationToken)
     {
         var mapper = new GridifyMapper<CourseEf>().GenerateMappings();
+
+        if (!request.GridifyQuery.IsValid(mapper))
+        {
+            throw new BadInputException("Chuỗi truy vấn không hợp lệ");
+        }
 
         var courses = await _context.Courses
             .AsNoTracking()

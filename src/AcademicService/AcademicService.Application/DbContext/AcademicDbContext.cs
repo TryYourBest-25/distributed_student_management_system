@@ -1,4 +1,3 @@
-using AcademicService.Domain.ValueObject;
 using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -8,7 +7,7 @@ namespace AcademicService.Application.DbContext;
 
 public partial class AcademicDbContext : Microsoft.EntityFrameworkCore.DbContext
 {
-    private IConfiguration _configuration;
+    private readonly IConfiguration _configuration;
 
     public AcademicDbContext(IConfiguration configuration)
     {
@@ -32,7 +31,7 @@ public partial class AcademicDbContext : Microsoft.EntityFrameworkCore.DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (optionsBuilder.IsConfigured) return;
-        var connectionString = _configuration["AcademicService:ConnectionStrings:DefaultConnection"] ??
+        var connectionString = _configuration["ConnectionStrings:DefaultConnection"] ??
                                throw new InvalidOperationException("Không thể tìm thấy chuỗi kết nối");
         optionsBuilder.UseExceptionProcessor().UseNpgsql(connectionString)
             .EnableSensitiveDataLogging()

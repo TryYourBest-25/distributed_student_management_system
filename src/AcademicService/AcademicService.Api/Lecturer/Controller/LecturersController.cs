@@ -2,13 +2,13 @@ using AcademicService.Api.Lecturer.Request;
 using AcademicService.Application.Lecturer.Command;
 using AcademicService.Application.Lecturer.Query;
 using AcademicService.Application.Lecturer.Response;
-using AcademicService.Domain.ValueObject;
 using Arch.EntityFrameworkCore.UnitOfWork.Collections;
 using FluentResults;
 using Gridify;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Api;
+using Shared.Domain.ValueObject;
 
 namespace AcademicService.Api.Lecturer.Controller;
 

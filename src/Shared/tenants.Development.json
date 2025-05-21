@@ -1,0 +1,32 @@
+{
+  "Finbuckle:MultiTenant:Stores:ConfigurationStore": {
+    "Defaults": {
+      "Location": {
+        "Public": "",
+        "Private": ""
+      },
+      "Tenants": [
+        {
+          "Id": "CNTT",
+          "Identifier": "IT-FACULTY",
+          "Name": "Công Nghệ Thông Tin",
+          "Location": {
+            "Public": "https://localhost:14100",
+            "Private": "https://localhost:14101"
+          }
+        },
+        {
+          "Id": "VT",
+          "Identifier": "VT-FACULTY",
+          "Name": "Điện Tử Viễn thông",
+          "Location": {
+            "Public": "https://localhost:14200",
+            "Private": "https://localhost:14201"
+          }
+        }
+      ]
+    },
+    "Tenants": {
+      "Default": ""
+    }
+  }}

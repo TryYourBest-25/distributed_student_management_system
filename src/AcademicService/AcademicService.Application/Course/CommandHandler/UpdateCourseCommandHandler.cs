@@ -1,10 +1,10 @@
 using AcademicService.Application.Course.Command;
 using AcademicService.Application.DbContext;
-using AcademicService.Domain.ValueObject;
 using EntityFramework.Exceptions.Common;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.Domain.ValueObject;
 using Shared.Exception;
 
 namespace AcademicService.Application.Course.CommandHandler;

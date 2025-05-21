@@ -1,6 +1,6 @@
-using AcademicService.Domain.ValueObject;
 using Shared.Domain;
 using Shared.Domain.Model;
+using Shared.Domain.ValueObject;
 
 namespace AcademicService.Domain.Aggregate;
 

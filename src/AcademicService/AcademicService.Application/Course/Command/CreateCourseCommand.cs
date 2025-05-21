@@ -1,6 +1,6 @@
-using AcademicService.Domain.ValueObject;
 using FluentResults;
 using MediatR;
+using Shared.Domain.ValueObject;
 
 namespace AcademicService.Application.Course.Command;
 

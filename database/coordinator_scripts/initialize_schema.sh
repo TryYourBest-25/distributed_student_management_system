@@ -107,4 +107,8 @@ psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" -v ON_ERROR_STOP=
 echo "Adding reference data..."
 psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" -v ON_ERROR_STOP=1 -f "$SCHEMA_DIR/04_reference_data.sql"
 
+# Thêm indexes
+echo "Creating indexes..."
+psql -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DBNAME" -v ON_ERROR_STOP=1 -f "$SCHEMA_DIR/05_indexes.sql"
+
 echo "Schema initialization completed successfully!" 

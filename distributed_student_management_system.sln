@@ -24,13 +24,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AcademicService.Application
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AcademicService.Domain", "src\AcademicService\AcademicService.Domain\AcademicService.Domain.csproj", "{36B6EEC3-D4F3-4886-B8EF-BA6E361688D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Api", "src\FalcultyItService\FacultyService.Api\FacultyService.Api.csproj", "{61E1C940-75F7-43D7-A76D-ED71809DCE94}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Api", "src\FacultyService\FacultyService.Api\FacultyService.Api.csproj", "{61E1C940-75F7-43D7-A76D-ED71809DCE94}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Application", "src\FalcultyItService\FacultyService.Application\FacultyService.Application.csproj", "{89FDA5EE-E2F3-4824-A351-6E6C1E51E98C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Application", "src\FacultyService\FacultyService.Application\FacultyService.Application.csproj", "{89FDA5EE-E2F3-4824-A351-6E6C1E51E98C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Infrastructure", "src\FalcultyItService\FacultyService.Infrastructure\FacultyService.Infrastructure.csproj", "{63D3C8A0-0331-41FF-B69A-160D1756CF94}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Infrastructure", "src\FacultyService\FacultyService.Infrastructure\FacultyService.Infrastructure.csproj", "{63D3C8A0-0331-41FF-B69A-160D1756CF94}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Domain", "src\FalcultyItService\FacultyService.Domain\FacultyService.Domain.csproj", "{BEF56D66-E612-4FDC-8255-5BA05DE6DCEB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyService.Domain", "src\FacultyService\FacultyService.Domain\FacultyService.Domain.csproj", "{BEF56D66-E612-4FDC-8255-5BA05DE6DCEB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacultyTelService.Api", "src\FacultyTelService\FacultyTelService.Api\FacultyTelService.Api.csproj", "{A3973B0A-9F64-4FDD-A7B4-9FFE86AFD716}"
 EndProject

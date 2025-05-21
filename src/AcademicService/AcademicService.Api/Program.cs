@@ -1,67 +1,39 @@
-using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using AcademicService.Api.Exception;
 using AcademicService.Application;
 using AcademicService.Application.DbContext;
-using AcademicService.Domain;
 using AcademicService.Infrastructure;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Serilog;
 using MediatR;
-using Microsoft.AspNetCore.Http.Json;
-using Microsoft.EntityFrameworkCore;
-using Serilog.Core;
-using Serilog.Exceptions;
+using Shared.Exception;
 using Shared.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Cấu hình Autofac --- 
-builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
-builder.Host.ConfigureContainer<ContainerBuilder>(cf =>
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory()).ConfigureContainer<ContainerBuilder>(cf =>
 {
     cf.RegisterModule(new MediatRModule(typeof(Program).Assembly,
         typeof(IApplicationMarker).Assembly));
-});
-// --- Cấu hình Serilog --- 
-// builder.Host.ConfigureSharedLogging(builder.Environment.ApplicationName);
+    
+    cf.RegisterGeneric(typeof(MediatRLoggingBehavior<,>)).As(typeof(IPipelineBehavior<,>)).InstancePerLifetimeScope();
+}).UseSerilog((context, provider, configuration) => { configuration.ReadFrom.Configuration(context.Configuration); });
 
 builder.Services.Configure<RouteOptions>(options =>
 {
     options.LowercaseUrls = true;
     options.LowercaseQueryStrings = true;
-});
-builder.Configuration.SetBasePath(AppContext.BaseDirectory);
-builder.Services.AddProblemDetails();
-
-builder.Services.AddExceptionHandler<ExceptionHandler>();
-
-builder.Services.AddControllers().AddJsonOptions(options =>
+}).AddProblemDetails().AddExceptionHandler<ExceptionHandler>().AddOpenApiDocument().AddDbContext<AcademicDbContext>().AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
 });
 
-builder.Services.AddOpenApiDocument();
-
-builder.Configuration.AddUserSecrets<Program>();
-
-builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+builder.Configuration.AddUserSecrets<Program>().AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
-    .AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true);
-builder.Configuration.AddJsonFile($"appsettings.shared.{builder.Environment.EnvironmentName}.json", optional: true,
-    reloadOnChange: true);
-builder.Configuration.AddEnvironmentVariables();
+    .AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true).AddJsonFile(
+        $"appsettings.shared.{builder.Environment.EnvironmentName}.json", optional: true,
+        reloadOnChange: true).AddEnvironmentVariables().SetBasePath(AppContext.BaseDirectory);
 
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(MediatRLoggingBehavior<,>));
-builder.Services.AddDbContext<AcademicDbContext>();
-
-builder.Host.UseSerilog((context, services, configuration) =>
-{
-    configuration.ReadFrom.Configuration(context.Configuration);
-});
 
 var app = builder.Build();
 
@@ -90,7 +62,5 @@ app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
 app.MapControllers();
-
-app.MapGet("/", () => "Hello World!");
 
 app.Run();

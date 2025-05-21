@@ -1,10 +1,10 @@
 using AcademicService.Application.DbContext;
 using AcademicService.Application.Lecturer.Command;
 using AcademicService.Domain.Aggregate;
-using AcademicService.Domain.ValueObject;
 using FluentResults;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.Domain.ValueObject;
 using Shared.Exception;
 
 namespace AcademicService.Application.Lecturer.CommandHandler;

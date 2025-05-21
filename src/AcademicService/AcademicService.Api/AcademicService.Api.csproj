@@ -12,7 +12,7 @@
         <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="10.0.0" />
         <PackageReference Include="Elastic.Serilog.Sinks" Version="8.12.3" />
         <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3" />
-        <PackageReference Include="FluentValidation" Version="11.11.0" />
+        <PackageReference Include="FluentResults" Version="3.16.0" />
         <PackageReference Include="Gridify.EntityFramework" Version="2.16.3" />
         <PackageReference Include="MediatR" Version="12.5.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
@@ -48,6 +48,10 @@
         <Link>appsettings.shared.json</Link>
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Exception\" />
     </ItemGroup>
 
 </Project>

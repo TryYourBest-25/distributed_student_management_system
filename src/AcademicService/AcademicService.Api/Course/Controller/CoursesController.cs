@@ -2,13 +2,13 @@ using AcademicService.Api.Course.Request;
 using AcademicService.Application.Course.Command;
 using AcademicService.Application.Course.Query;
 using AcademicService.Application.Course.Response;
-using AcademicService.Domain.ValueObject;
 using Arch.EntityFrameworkCore.UnitOfWork.Collections;
 using FluentResults;
 using Gridify;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Api;
+using Shared.Domain.ValueObject;
 
 namespace AcademicService.Api.Course.Controller;
 
@@ -120,6 +120,7 @@ public partial class CoursesController
         [FromQuery] GridifyQuery gridifyQuery,
         CancellationToken cancellationToken = default)
     {
+        
         var query = new SearchCourseQuery(gridifyQuery);
         
         var result = await _mediator.Send(query, cancellationToken);

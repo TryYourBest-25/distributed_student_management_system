@@ -2,6 +2,7 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/database/init-scripts/00_init_citus.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/database/init-scripts/02_faculty_distributed_tables.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/database/init-scripts/03_accounting_distributed_tables.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/database/init-scripts/04_reference_data.sql" dialect="PostgreSQL" />
     <file url="PROJECT" dialect="PostgreSQL" />
