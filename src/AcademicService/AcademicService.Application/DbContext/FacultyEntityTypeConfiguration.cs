@@ -4,9 +4,9 @@ using Shared.Infra.Entity;
 
 namespace AcademicService.Application.DbContext;
 
-public class FacultyEntityTypeConfiguration : IEntityTypeConfiguration<FacultyEf>
+public class FacultyEntityTypeConfiguration : IEntityTypeConfiguration<Faculty>
 {
-    public void Configure(EntityTypeBuilder<FacultyEf> builder)
+    public void Configure(EntityTypeBuilder<Faculty> builder)
     {
         builder.ToTable("faculty", tb => tb.HasComment("Bảng chứa thông tin các khoa"));
         builder.HasKey(e => e.FacultyCode)

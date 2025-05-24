@@ -54,6 +54,8 @@ COMMENT ON COLUMN tuition_payment.amount_paid IS 'Số tiền đã đóng';
 -- Ràng buộc cho bảng student_basic_info
 ALTER TABLE student_basic_info
     ADD CONSTRAINT pk_student_basic_info PRIMARY KEY (student_code);
+ALTER TABLE student_basic_info
+    ADD CONSTRAINT fk_student_global_student_code FOREIGN KEY (student_code) REFERENCES global_student_code(student_code);
 
 -- Ràng buộc cho bảng tuition
 ALTER TABLE tuition

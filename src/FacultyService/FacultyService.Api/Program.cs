@@ -7,6 +7,7 @@ using Finbuckle.MultiTenant;
 using MediatR;
 using Serilog;
 using Shared.Logging;
+using Asp.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,26 +23,22 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
     });
 
 builder.Services.Configure<RouteOptions>(options =>
-{
-    options.LowercaseUrls = true;
-    options.LowercaseQueryStrings = true;
-}).AddProblemDetails()
+    {
+        options.LowercaseUrls = true;
+        options.LowercaseQueryStrings = true;
+    }).AddProblemDetails()
     .AddExceptionHandler<ExceptionHandler>()
     .AddOpenApiDocument()
     .AddDbContext<FacultyDbContext>()
     .AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower;
     });
 builder.Services.AddMultiTenant<AppTenantInfo>()
     .WithConfigurationStore()
     .WithStaticStrategy(builder.Configuration["Tenants:Default"] ??
                         throw new InvalidOperationException("Tenant is missing."));
-builder.Services.AddGrpc(options =>
-{
-    options.EnableDetailedErrors = true;
-});
 
 builder.Configuration.SetBasePath(AppContext.BaseDirectory)
     .AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true)
@@ -54,6 +51,22 @@ builder.Configuration.SetBasePath(AppContext.BaseDirectory)
     .AddEnvironmentVariables()
     .AddUserSecrets<Program>();
 
+
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.ReportApiVersions = true;
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        new UrlSegmentApiVersionReader(),
+        new QueryStringApiVersionReader("api-version"),
+        new HeaderApiVersionReader("X-API-Version")
+    );
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
 
 
 var app = builder.Build();

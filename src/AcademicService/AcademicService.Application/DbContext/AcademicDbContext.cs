@@ -22,11 +22,11 @@ public partial class AcademicDbContext : Microsoft.EntityFrameworkCore.DbContext
         _configuration = configuration;
     }
 
-    public virtual DbSet<CourseEf> Courses { get; set; }
+    public virtual DbSet<Course> Courses { get; set; }
 
-    public virtual DbSet<FacultyEf> Faculties { get; set; }
+    public virtual DbSet<Faculty> Faculties { get; set; }
 
-    public virtual DbSet<LecturerEf> Lecturers { get; set; }
+    public virtual DbSet<Lecturer> Lecturers { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -40,9 +40,9 @@ public partial class AcademicDbContext : Microsoft.EntityFrameworkCore.DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        new CourseEntityTypeConfiguration().Configure(modelBuilder.Entity<CourseEf>());
-        new FacultyEntityTypeConfiguration().Configure(modelBuilder.Entity<FacultyEf>());
-        new LecturerEntityTypeConfiguration().Configure(modelBuilder.Entity<LecturerEf>());
+        new CourseEntityTypeConfiguration().Configure(modelBuilder.Entity<Course>());
+        new FacultyEntityTypeConfiguration().Configure(modelBuilder.Entity<Faculty>());
+        new LecturerEntityTypeConfiguration().Configure(modelBuilder.Entity<Lecturer>());
 
         OnModelCreatingPartial(modelBuilder);
     }

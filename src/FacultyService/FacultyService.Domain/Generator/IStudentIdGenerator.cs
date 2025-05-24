@@ -1,11 +1,12 @@
 using System.Collections.Immutable;
 using FacultyService.Domain.ValueObject;
+using Shared.Domain.ValueObject;
 
 namespace FacultyService.Domain.Generator;
 
 public interface IStudentIdGenerator
 {
-    StudentId Generate(ClassCode classCode);
-    
-    IImmutableList<StudentId> Generate(ClassCode classCode, int count);
+    StudentCode Generate(ClassCode classCode);
+
+    IImmutableList<StudentCode> Generate(ClassCode classCode, int count);
 }

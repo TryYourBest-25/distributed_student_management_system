@@ -30,10 +30,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Registration\QueryHandler\" />
-      <Folder Include="Registration\Query\" />
-      <Folder Include="Registration\Response\" />
-      <Folder Include="Student\Notification\" />
+        <Folder Include="Registrations\QueryHandler\"/>
+        <Folder Include="Registrations\Query\"/>
+        <Folder Include="Registrations\Response\"/>
+        <Folder Include="Students\Notification\"/>
     </ItemGroup>
 
 </Project>

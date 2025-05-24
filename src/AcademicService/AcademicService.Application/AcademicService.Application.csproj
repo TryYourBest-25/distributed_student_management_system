@@ -17,6 +17,7 @@
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.5"/>
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
       <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
     </ItemGroup>
@@ -26,12 +27,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Faculty\CommandHandler\" />
-      <Folder Include="Faculty\Command\" />
-      <Folder Include="Faculty\QueryHandler\" />
-      <Folder Include="Faculty\Query\" />
-      <Folder Include="Lecturer\QueryHandler\" />
-      <Folder Include="Lecturer\Query\" />
+        <Folder Include="Faculties\CommandHandler\"/>
+        <Folder Include="Faculties\Command\"/>
+        <Folder Include="Faculties\QueryHandler\"/>
+        <Folder Include="Faculties\Query\"/>
+        <Folder Include="Lecturers\QueryHandler\"/>
+        <Folder Include="Lecturers\Query\"/>
     </ItemGroup>
 
 </Project>

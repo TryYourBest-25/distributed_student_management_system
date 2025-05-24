@@ -4,14 +4,14 @@ using Shared.Infra.Entity;
 
 namespace AcademicService.Application.DbContext;
 
-public class CourseEntityTypeConfiguration : IEntityTypeConfiguration<CourseEf>
+public class CourseEntityTypeConfiguration : IEntityTypeConfiguration<Course>
 {
-    public void Configure(EntityTypeBuilder<CourseEf> builder)
+    public void Configure(EntityTypeBuilder<Course> builder)
     {
         builder.ToTable("course", tb => tb.HasComment("Bảng chứa thông tin các môn học"));
-        builder.HasKey(e => e.CourseCode )
+        builder.HasKey(e => e.CourseCode)
             .HasName("PRIMARY");
-        
+
         builder.Property(c => c.CourseCode)
             .HasMaxLength(10)
             .IsFixedLength()

@@ -47,9 +47,10 @@ COMMENT ON COLUMN lecturer.faculty_code IS 'Mã khoa (FK)';
 
 -- Bảng Người dùng (Tài khoản đăng nhập) (user_account)
 CREATE TABLE user_account (
-    user_id VARCHAR(20) NOT NULL,
+    user_id UUID NOT NULL DEFAULT gen_random_uuid(),
     username VARCHAR(50) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    faculty_code VARCHAR(10) NOT NULL,
     full_name VARCHAR(100),
     email VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,
@@ -63,6 +64,7 @@ COMMENT ON COLUMN user_account.full_name IS 'Họ tên đầy đủ';
 COMMENT ON COLUMN user_account.email IS 'Địa chỉ email';
 COMMENT ON COLUMN user_account.is_active IS 'Tài khoản có đang hoạt động không?';
 COMMENT ON COLUMN user_account.role_id IS 'ID vai trò (FK)';
+COMMENT ON COLUMN user_account.faculty_code IS 'Mã khoa';
 
 -- Bảng Vai trò (role)
 CREATE TABLE role (

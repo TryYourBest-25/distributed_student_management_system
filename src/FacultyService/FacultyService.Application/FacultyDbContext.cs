@@ -15,24 +15,26 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
 
     private readonly IConfiguration _configuration;
 
-    public FacultyDbContext(DbContextOptions<FacultyDbContext> options, IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor, IConfiguration configuration)
+    public FacultyDbContext(DbContextOptions<FacultyDbContext> options,
+        IMultiTenantContextAccessor<AppTenantInfo> multiTenantContextAccessor, IConfiguration configuration)
         : base(options)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(multiTenantContextAccessor);
         ArgumentNullException.ThrowIfNull(configuration);
         MultiTenantContextAccessor = multiTenantContextAccessor;
-        TenantInfo = MultiTenantContextAccessor.MultiTenantContext.TenantInfo ?? throw new InvalidOperationException("TenantInfo is null");
+        TenantInfo = MultiTenantContextAccessor.MultiTenantContext.TenantInfo ??
+                     throw new InvalidOperationException("TenantInfo is null");
         TenantMismatchMode = TenantMismatchMode.Throw;
         TenantNotSetMode = TenantNotSetMode.Throw;
         _configuration = configuration;
     }
 
-    public virtual DbSet<Domain.Entity.Class> Classes { get; set; }
+    public virtual DbSet<Class> Classes { get; set; }
 
     public virtual DbSet<Course> Courses { get; set; }
 
-    public virtual DbSet<Domain.Entity.CreditClass> CreditClasses { get; set; }
+    public virtual DbSet<CreditClass> CreditClasses { get; set; }
 
     public virtual DbSet<Faculty> Faculties { get; set; }
 
@@ -42,10 +44,9 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
 
     public virtual DbSet<Lecturer> Lecturers { get; set; }
 
-    public virtual DbSet<Domain.Entity.Registration> Registrations { get; set; }
+    public virtual DbSet<Registration> Registrations { get; set; }
 
-    public virtual DbSet<Domain.Entity.Student> Students { get; set; }
-
+    public virtual DbSet<Student> Students { get; set; }
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -62,7 +63,7 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Domain.Entity.Class>(entity =>
+        modelBuilder.Entity<Class>(entity =>
         {
             entity.HasKey(e => new { e.FacultyCode, e.ClassCode }).HasName("pk_class");
 
@@ -100,7 +101,7 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_class_global_code");
         });
-        
+
 
         modelBuilder.Entity<Course>(entity =>
         {
@@ -128,7 +129,7 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
                 .HasColumnName("lecture_credit");
         });
 
-        modelBuilder.Entity<Domain.Entity.CreditClass>(entity =>
+        modelBuilder.Entity<CreditClass>(entity =>
         {
             entity.HasKey(e => new { e.FacultyCode, e.CreditClassId }).HasName("pk_credit_class");
 
@@ -289,7 +290,7 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
                 .HasConstraintName("fk_lecturer_faculty");
         });
 
-        modelBuilder.Entity<Domain.Entity.Registration>(entity =>
+        modelBuilder.Entity<Registration>(entity =>
         {
             entity.HasKey(e => new { e.FacultyCode, e.CreditClassId, e.StudentCode }).HasName("pk_registration");
 
@@ -338,9 +339,9 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_registration_student");
         });
-        
 
-        modelBuilder.Entity<Domain.Entity.Student>(entity =>
+
+        modelBuilder.Entity<Student>(entity =>
         {
             entity.HasKey(e => new { e.FacultyCode, e.StudentCode }).HasName("pk_student");
 
@@ -400,6 +401,10 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
                 .HasForeignKey(d => new { d.FacultyCode, d.ClassCode })
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_student_class");
+
+            entity.HasMany(d => d.Registrations).WithOne().HasForeignKey(d => new { d.FacultyCode, d.StudentCode })
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_student_registration");
         });
 
         OnModelCreatingPartial(modelBuilder);
@@ -410,12 +415,13 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Faculty>().HasQueryFilter(f => f.FacultyCode == TenantInfo.Id);
-        modelBuilder.Entity<Domain.Entity.Class>().HasQueryFilter(c => c.FacultyCode == TenantInfo.Id);
+        modelBuilder.Entity<Class>().HasQueryFilter(c => c.FacultyCode == TenantInfo.Id);
         modelBuilder.Entity<Lecturer>().HasQueryFilter(l => l.FacultyCode == TenantInfo.Id);
-        modelBuilder.Entity<Domain.Entity.Registration>().HasQueryFilter(r => r.FacultyCode == TenantInfo.Id);
-        modelBuilder.Entity<Domain.Entity.Student>().HasQueryFilter(s => s.FacultyCode == TenantInfo.Id);
-        modelBuilder.Entity<Domain.Entity.CreditClass>().HasQueryFilter(cc => cc.FacultyCode == TenantInfo.Id);
+        modelBuilder.Entity<Registration>().HasQueryFilter(r => r.FacultyCode == TenantInfo.Id);
+        modelBuilder.Entity<Student>().HasQueryFilter(s => s.FacultyCode == TenantInfo.Id);
+        modelBuilder.Entity<CreditClass>().HasQueryFilter(cc => cc.FacultyCode == TenantInfo.Id);
     }
+
     public ITenantInfo TenantInfo { get; }
     public TenantMismatchMode TenantMismatchMode { get; }
     public TenantNotSetMode TenantNotSetMode { get; }
