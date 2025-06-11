@@ -21,7 +21,7 @@ builder.Services.AddOcelot(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddDefaultPolicy(policy =>
     {
         policy.AllowAnyOrigin()
             .AllowAnyMethod()
@@ -61,9 +61,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-app.UseHttpsRedirection();
 
-app.UseMultiTenant();
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Docker"))
+{
+    app.UseHttpsRedirection();
+}
+
+//app.UseMultiTenant();
 
 app.UseAuthentication();
 app.UseAuthorization();

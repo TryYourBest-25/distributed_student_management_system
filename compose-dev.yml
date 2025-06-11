@@ -401,3 +401,123 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  # ========== MICROSERVICES ==========
+  
+  api-gateway:
+    build:
+      context: ./src
+      dockerfile: ./ApiGateway/Dockerfile
+    container_name: api-gateway
+    hostname: api-gateway
+    env_file:
+      - .env.dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "${API_GATEWAY_HOST_PORT:-5000}:8080"
+    volumes:
+      - ./src/ApiGateway/ocelot.json:/app/ocelot.json
+    networks:
+      - dsms_network
+    depends_on:
+      - academic-service
+      - faculty-service-it
+      - faculty-service-tel
+      - tuition-service
+    restart: unless-stopped
+
+  academic-service:
+    build:
+      context: ./src
+      dockerfile: ./AcademicService/Dockerfile
+    container_name: academic-service
+    hostname: academic-service
+    env_file:
+      - .env.dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=coordinator0;Port=5432;Database=dsmsdb;Username=coor;Password=coor
+    ports:
+      - "${ACADEMIC_SERVICE_HOST_PORT:-14200}:8080"
+    networks:
+      - dsms_network
+    depends_on:
+      coordinator0:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    restart: unless-stopped
+
+  faculty-service-it:
+    build:
+      context: ./src
+      dockerfile: ./FacultyService/Dockerfile
+    container_name: faculty-service-it
+    hostname: faculty-service-it
+    env_file:
+      - .env.dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+      - Tenant=IT-FACULTY
+      - ConnectionStrings__DefaultConnection=Host=coordinator0;Port=5432;Database=dsmsdb;Username=coor;Password=coor
+    ports:
+      - "${FACULTY_SERVICE_IT_HOST_PORT:-30000}:8080"
+    networks:
+      - dsms_network
+    depends_on:
+      coordinator0:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    restart: unless-stopped
+
+  faculty-service-tel:
+    build:
+      context: ./src
+      dockerfile: ./FacultyService/Dockerfile
+    container_name: faculty-service-tel
+    hostname: faculty-service-tel
+    env_file:
+      - .env.dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+      - Tenant=TEL-FACULTY
+      - ConnectionStrings__DefaultConnection=Host=coordinator0;Port=5432;Database=dsmsdb;Username=coor;Password=coor
+    ports:
+      - "${FACULTY_SERVICE_TEL_HOST_PORT:-30001}:8080"
+    networks:
+      - dsms_network
+    depends_on:
+      coordinator0:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    restart: unless-stopped
+
+  tuition-service:
+    build:
+      context: ./src
+      dockerfile: ./TuitionService/Dockerfile
+    container_name: tuition-service
+    hostname: tuition-service
+    env_file:
+      - .env.dev
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=acc-postgres-db;Port=5432;Database=acc_db;Username=acc_user;Password=acc_user
+    ports:
+      - "${TUITION_SERVICE_HOST_PORT:-14100}:8080"
+    networks:
+      - dsms_network
+    depends_on:
+      acc-postgres-db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+    restart: unless-stopped
+

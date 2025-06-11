@@ -3,7 +3,7 @@
 source .env.dev
 
 # Start the services, remove volumes, and remove orphan containers
-docker compose -f compose-dev.yml down --volumes --remove-orphans
+#docker compose -f compose-dev.yml down --volumes --remove-orphans
 echo "================================================1. CREATE DATABASE================================================"
 docker compose -f compose-dev.yml up -d
 

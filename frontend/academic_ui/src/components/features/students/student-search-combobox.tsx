@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSearchStudentsByCode } from "@/hooks/use-students";
 import { type StudentDetailResponse } from "@/services/student-service";
+import { useTenantContext } from "@/contexts/tenant-context";
 
 interface StudentSearchComboboxProps {
   facultyCode: string;
+  servicePath: string;
   value?: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
@@ -19,6 +21,7 @@ interface StudentSearchComboboxProps {
 
 export function StudentSearchCombobox({
   facultyCode,
+  servicePath,
   value = "",
   onValueChange,
   placeholder = "Nhập mã sinh viên...",
@@ -32,6 +35,7 @@ export function StudentSearchCombobox({
   // Search students when user types
   const { data: studentsResponse, isLoading } = useSearchStudentsByCode(
     facultyCode,
+    servicePath,
     searchQuery,
     searchQuery.length >= 2 && showSuggestions
   );

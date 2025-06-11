@@ -22,14 +22,14 @@ export const studentKeys = {
 };
 
 // Get student detail
-export const useStudent = (facultyCode: string, studentCode: string) => {
+export const useStudent = (facultyCode: string, servicePath: string, studentCode: string) => {
   return useQuery({
     queryKey: studentKeys.detail(facultyCode, studentCode),
     queryFn: async () => {
-      const response = await studentService.getStudentById(facultyCode, studentCode);
+      const response = await studentService.getStudentById(facultyCode, servicePath, studentCode);
       return response;
     },
-    enabled: !!facultyCode && !!studentCode,
+    enabled: !!facultyCode && !!servicePath && !!studentCode,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -37,16 +37,17 @@ export const useStudent = (facultyCode: string, studentCode: string) => {
 // Get student registrations
 export const useStudentRegistrations = (
   facultyCode: string, 
+  servicePath: string,
   studentCode: string, 
   params: GridifyQueryParams = {}
 ) => {
   return useQuery({
     queryKey: studentKeys.studentRegistrations(facultyCode, studentCode, params),
     queryFn: async () => {
-      const response = await studentService.getStudentRegistrations(facultyCode, studentCode, params);
+      const response = await studentService.getStudentRegistrations(facultyCode, servicePath, studentCode, params);
       return response;
     },
-    enabled: !!facultyCode && !!studentCode,
+    enabled: !!facultyCode && !!servicePath && !!studentCode,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -54,6 +55,7 @@ export const useStudentRegistrations = (
 // Search students by code - for active students only
 export const useSearchStudentsByCode = (
   facultyCode: string,
+  servicePath: string,
   studentCodeQuery: string,
   enabled: boolean = true,
   params: GridifyQueryParams = {}
@@ -61,15 +63,15 @@ export const useSearchStudentsByCode = (
   return useQuery({
     queryKey: studentKeys.searchByCode(facultyCode, studentCodeQuery, params),
     queryFn: async () => {
-      return studentService.searchStudentsByCode(facultyCode, studentCodeQuery, params);
+      return studentService.searchStudentsByCode(facultyCode, servicePath, studentCodeQuery, params);
     },
-    enabled: enabled && !!facultyCode && studentCodeQuery.length >= 2,
+    enabled: enabled && !!facultyCode && !!servicePath && studentCodeQuery.length >= 2,
     staleTime: 30 * 1000, // 30 seconds for search results
   });
 };
 
 // Update student mutation
-export const useUpdateStudent = (facultyCode: string, studentCode: string, options?: {
+export const useUpdateStudent = (facultyCode: string, servicePath: string, studentCode: string, options?: {
   onSuccess?: (newStudentCode?: string) => void;
   onError?: (error: Error) => void;
 }) => {
@@ -77,7 +79,7 @@ export const useUpdateStudent = (facultyCode: string, studentCode: string, optio
   
   return useMutation({
     mutationFn: async (data: UpdateStudentRequest) => {
-      return studentService.updateStudent(facultyCode, studentCode, data);
+      return studentService.updateStudent(facultyCode, servicePath, studentCode, data);
     },
     onSuccess: (result, variables) => {
       toast.success(`Đã cập nhật thông tin sinh viên ${variables.firstName} ${variables.lastName} thành công!`);

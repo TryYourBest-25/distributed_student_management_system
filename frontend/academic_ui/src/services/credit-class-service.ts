@@ -65,19 +65,21 @@ export interface UpdateCreditClassRequest {
 }
 
 class CreditClassService {
-  private baseUrl = "http://localhost:30000/api/v1";
+  private getBaseUrl(servicePath: string): string {
+    return `/api/faculty/${servicePath}/v1`;
+  }
 
   // Get all credit classes for a specific faculty
-  async getAllCreditClasses(facultyCode: string, params: GridifyQueryParams = {}): Promise<PagedList<CreditClassBasicResponse>> {
+  async getAllCreditClasses(facultyCode: string, servicePath: string, params: GridifyQueryParams = {}): Promise<PagedList<CreditClassBasicResponse>> {
     try {
       const queryParams = new URLSearchParams();
       
-      if (params.page !== undefined) queryParams.append('page', params.page.toString());
+      if (params.page) queryParams.append('page', params.page.toString());
       if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
       if (params.filter) queryParams.append('filter', params.filter);
       if (params.orderBy) queryParams.append('orderBy', params.orderBy);
 
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/creditclasses?${queryParams.toString()}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/creditclasses?${queryParams.toString()}`;
       console.log('Fetching credit classes from:', url);
 
       const response = await fetch(url);
@@ -113,8 +115,8 @@ class CreditClassService {
   }
 
   // Get credit classes with display information
-  async getCreditClassesWithDisplayInfo(facultyCode: string, params: GridifyQueryParams = {}): Promise<PagedList<CreditClassDisplayInfo>> {
-    const response = await this.getAllCreditClasses(facultyCode, params);
+  async getCreditClassesWithDisplayInfo(facultyCode: string, servicePath: string, params: GridifyQueryParams = {}): Promise<PagedList<CreditClassDisplayInfo>> {
+    const response = await this.getAllCreditClasses(facultyCode, servicePath, params);
     
     return {
       ...response,
@@ -123,106 +125,103 @@ class CreditClassService {
   }
 
   // Get credit class detail by ID
-  async getCreditClassById(facultyCode: string, creditClassId: number): Promise<CreditClassDetailResponse> {
+  async getCreditClassById(facultyCode: string, servicePath: string, creditClassId: number): Promise<CreditClassDetailResponse> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}`;
       console.log('Fetching credit class detail from:', url);
 
       const response = await fetch(url);
       
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Không tìm thấy lớp tín chỉ với ID: ${creditClassId}`);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      return response.json();
+      // Check if response has content
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Response không phải JSON format');
+      }
+      
+      const text = await response.text();
+      if (!text.trim()) {
+        throw new Error('Response rỗng từ server');
+      }
+      
+      try {
+        const data = JSON.parse(text);
+        if (!data) {
+          throw new Error(`Không tìm thấy lớp tín chỉ với ID: ${creditClassId}`);
+        }
+        return data;
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Response text:', text);
+        throw new Error('Không thể parse JSON response');
+      }
     } catch (error) {
       console.error('Error fetching credit class detail:', error);
-      // Return mock data for development
-      return {
-        creditClassId: creditClassId,
-        courseCode: 'CS101',
-        groupNumber: 1,
-        currentStudent: 45,
-        minStudent: 30,
-        academicYear: '2023-2024',
-        semester: 1,
-        lecturerName: 'Nguyễn Văn A',
-        lecturerCode: 'GV001',
-        courseName: 'Nhập môn Lập trình',
-        lectureCredit: 2,
-        labCredit: 1,
-        isCancelled: false,
-      };
+      throw error;
     }
   }
 
   // Get students in credit class
   async getStudentsInCreditClass(
     facultyCode: string, 
+    servicePath: string, 
     creditClassId: number, 
     params: GridifyQueryParams = {}
   ): Promise<PagedList<StudentDetailResponse>> {
     try {
       const queryParams = new URLSearchParams();
       
-      if (params.page !== undefined) queryParams.append('page', params.page.toString());
+      if (params.page) queryParams.append('page', params.page.toString());
       if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
       if (params.filter) queryParams.append('filter', params.filter);
       if (params.orderBy) queryParams.append('orderBy', params.orderBy);
 
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}/students?${queryParams.toString()}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}/students?${queryParams.toString()}`;
       console.log('Fetching students in credit class from:', url);
 
       const response = await fetch(url);
       
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error(`Không tìm thấy lớp tín chỉ với ID: ${creditClassId}`);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      return response.json();
+      // Check if response has content
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Response không phải JSON format');
+      }
+      
+      const text = await response.text();
+      if (!text.trim()) {
+        throw new Error('Response rỗng từ server');
+      }
+      
+      try {
+        return JSON.parse(text);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Response text:', text);
+        throw new Error('Không thể parse JSON response');
+      }
     } catch (error) {
       console.error('Error fetching students in credit class:', error);
-      // Return mock data for development
-      const mockStudents: StudentDetailResponse[] = [
-        {
-          studentCode: 'SV001',
-          firstName: 'Nguyễn',
-          lastName: 'Văn A',
-          birthDate: '2002-01-15',
-          address: '123 Đường ABC, Quận 1, TP.HCM',
-          isSuspended: false,
-          classCode: 'D20CNTT01',
-          facultyCode: facultyCode,
-        },
-        {
-          studentCode: 'SV002',
-          firstName: 'Trần',
-          lastName: 'Thị B',
-          birthDate: '2002-03-20',
-          address: '456 Đường XYZ, Quận 2, TP.HCM',
-          isSuspended: false,
-          classCode: 'D20CNTT01',
-          facultyCode: facultyCode,
-        },
-      ];
-      
-      return {
-        items: mockStudents,
-        indexFrom: 0,
-        pageIndex: params.page || 1,
-        pageSize: params.pageSize || 10,
-        totalCount: mockStudents.length,
-        totalPages: 1,
-        hasPreviousPage: false,
-        hasNextPage: false,
-      };
+      throw error;
     }
   }
 
   // Create new credit class
-  async createCreditClass(facultyCode: string, data: CreateCreditClassRequest): Promise<string> {
+  async createCreditClass(facultyCode: string, servicePath: string, data: CreateCreditClassRequest): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/creditclasses`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/creditclasses`;
       console.log('Creating credit class at:', url, data);
 
       const response = await fetch(url, {
@@ -245,9 +244,9 @@ class CreditClassService {
   }
 
   // Update existing credit class
-  async updateCreditClass(facultyCode: string, creditClassId: number, data: UpdateCreditClassRequest): Promise<string> {
+  async updateCreditClass(facultyCode: string, servicePath: string, creditClassId: number, data: UpdateCreditClassRequest): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}`;
       console.log('Updating credit class at:', url, data);
 
       const response = await fetch(url, {
@@ -270,9 +269,9 @@ class CreditClassService {
   }
 
   // Add student to credit class
-  async addStudentToCreditClass(facultyCode: string, creditClassId: number, studentCode: string): Promise<string> {
+  async addStudentToCreditClass(facultyCode: string, servicePath: string, creditClassId: number, studentCode: string): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}/students/${studentCode}?isCancelled=false`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/creditclasses/${creditClassId}/students/${studentCode}?isCancelled=false`;
       console.log('Adding student to credit class at:', url);
 
       const response = await fetch(url, {
@@ -294,9 +293,9 @@ class CreditClassService {
   }
 
   // Delete credit classes (bulk delete)
-  async deleteCreditClasses(facultyCode: string, creditClassIds: number[]): Promise<void> {
+  async deleteCreditClasses(facultyCode: string, servicePath: string, creditClassIds: number[]): Promise<void> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/creditclasses/bulk`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/creditclasses/bulk`;
       console.log('Deleting credit classes:', url, creditClassIds);
 
       const response = await fetch(url, {

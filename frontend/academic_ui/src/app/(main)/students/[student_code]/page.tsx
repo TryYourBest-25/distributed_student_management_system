@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import PageHeader from '@/components/core/page-header';
-import { useAuth } from '@/lib/providers/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { UserRole } from '@/types/auth';
 import { useStudent, useStudentRegistrations, useUpdateStudent } from '@/hooks/use-students';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/form";
 import { ArrowLeft, User, Calendar, MapPin, AlertTriangle, BookOpen, Edit, Save, X } from 'lucide-react';
 import { StudentDetailSkeleton } from '@/components/features/students/student-detail-skeleton';
+import { useTenantContext } from '@/contexts/tenant-context';
 
 const updateStudentSchema = z.object({
   newStudentCode: z.string().optional().refine((code) => {
@@ -70,23 +71,24 @@ import {
 export default function StudentDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const { getFacultyCode, getFacultyServicePath } = useTenantContext();
   const [editMode, setEditMode] = useState(false);
 
   const studentCode = params.student_code as string;
   
-  const facultyCode = user?.role === UserRole.KHOA 
-    ? user?.faculty_code || 'it-faculty'
-    : 'it-faculty';
+  const userRoles = session?.user?.roles || [];
+  const facultyCode = getFacultyCode();
+  const servicePath = getFacultyServicePath();
 
-  const { data: studentDetails, isLoading: studentLoading, error: studentError } = useStudent(facultyCode, studentCode);
+  const { data: studentDetails, isLoading: studentLoading, error: studentError } = useStudent(facultyCode, servicePath, studentCode);
   
-  const { data: registrationsData, isLoading: registrationsLoading, error: registrationsError } = useStudentRegistrations(facultyCode, studentCode, {
+  const { data: registrationsData, isLoading: registrationsLoading, error: registrationsError } = useStudentRegistrations(facultyCode, servicePath, studentCode, {
     page: 0,
     pageSize: 50
   });
 
-  const updateStudentMutation = useUpdateStudent(facultyCode, studentCode, {
+  const updateStudentMutation = useUpdateStudent(facultyCode, servicePath, studentCode, {
     onSuccess: (newStudentCode) => {
       setEditMode(false);
       // If student code was changed, redirect to the new URL
@@ -173,8 +175,8 @@ export default function StudentDetailPage() {
   };
 
   const canManageStudents = useMemo(() => 
-    user?.role === UserRole.PGV || (user?.role === UserRole.KHOA && user?.faculty_code === facultyCode),
-    [user, facultyCode]
+    userRoles.includes('PGV') || (userRoles.includes('KHOA')),
+    [userRoles]
   );
 
   // Convert various date formats to dd/MM/yyyy format for API

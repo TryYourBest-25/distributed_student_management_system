@@ -51,6 +51,7 @@ interface CreditClassDataTableProps<TData, TValue> {
   data: TData[];
   canManage: boolean;
   facultyCode: string;
+  servicePath: string;
   onRowClick?: (row: Row<TData>) => void;
 }
 
@@ -73,6 +74,7 @@ export function CreditClassDataTable<TData extends CreditClassInfo, TValue>({
   data,
   canManage,
   facultyCode,
+  servicePath,
   onRowClick,
 }: CreditClassDataTableProps<TData, TValue>) {
   const router = useRouter();
@@ -282,6 +284,7 @@ export function CreditClassDataTable<TData extends CreditClassInfo, TValue>({
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         facultyCode={facultyCode}
+        servicePath={servicePath}
       />
 
       <DeleteConfirmDialog

@@ -72,9 +72,14 @@ namespace FacultyService.Api.CreditClasses.Controller
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetCreditClassById(int id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetCreditClassById([FromRoute] int id, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new CreditClassByIdQuery(id), cancellationToken);
+            if (result == null)
+            {
+                return NotFound($"Không tìm thấy lớp tín chỉ với ID: {id}");
+            }
+
             return Ok(result);
         }
 

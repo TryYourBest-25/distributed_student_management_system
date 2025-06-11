@@ -2340,3 +2340,20 @@ LIMIT @__p_1 OFFSET @__p_0"
 2025-06-11T15:35:38.0941037+07:00 [INF] (///) Hosting environment: "Development"
 2025-06-11T15:35:38.0941268+07:00 [INF] (///) Content root path: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/TuitionService/TuitionService.Api"
 2025-06-11T15:35:38.0941608+07:00 [DBG] (///) Hosting started
+2025-06-11T18:18:04.5981530+07:00 [DBG] (///) Registered model binder providers, in the following order: ["Asp.Versioning.ApiVersionModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.BinderTypeModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.ServicesModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.BodyModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.HeaderModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.FloatingPointTypeModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.EnumTypeModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.DateTimeModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.SimpleTypeModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.TryParseModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.CancellationTokenModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.ByteArrayModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.FormFileModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.FormCollectionModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.KeyValuePairModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.DictionaryModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.ArrayModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.CollectionModelBinderProvider", "Microsoft.AspNetCore.Mvc.ModelBinding.Binders.ComplexObjectModelBinderProvider"]
+2025-06-11T18:18:04.7909819+07:00 [INF] (///) No action descriptors found. This may indicate an incorrectly configured application or missing application parts. To learn more, visit https://aka.ms/aspnet/mvc/app-parts
+2025-06-11T18:18:04.8055804+07:00 [DBG] (///) Hosting starting
+2025-06-11T18:18:05.2594251+07:00 [DBG] (///) Middleware configuration started with options: "{AllowedHosts = *, AllowEmptyHosts = True, IncludeFailureMessage = True}"
+2025-06-11T18:18:05.2602896+07:00 [DBG] (///) Wildcard detected, all requests with hosts will be allowed.
+2025-06-11T18:18:05.4056760+07:00 [WRN] (///) The ASP.NET Core developer certificate is only trusted by some clients. For information about trusting the ASP.NET Core developer certificate, see https://aka.ms/aspnet/https-trust-dev-cert
+2025-06-11T18:18:05.4084910+07:00 [WRN] (///) Overriding address(es) '"https://localhost:31001"'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+2025-06-11T18:18:05.4201491+07:00 [INF] (///) Now listening on: "http://localhost:14100"
+2025-06-11T18:18:05.4221160+07:00 [INF] (///) Now listening on: "https://localhost:14101"
+2025-06-11T18:18:05.4224454+07:00 [DBG] (///) Loaded hosting startup assembly "TuitionService.Api"
+2025-06-11T18:18:05.4231050+07:00 [INF] (///) Application started. Press Ctrl+C to shut down.
+2025-06-11T18:18:05.4232427+07:00 [INF] (///) Hosting environment: "Development"
+2025-06-11T18:18:05.4233218+07:00 [INF] (///) Content root path: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/TuitionService/TuitionService.Api"
+2025-06-11T18:18:05.4234272+07:00 [DBG] (///) Hosting started
+2025-06-11T22:00:21.0681909+07:00 [INF] (///) Application is shutting down...
+2025-06-11T22:00:21.0691363+07:00 [DBG] (///) Hosting stopping
+2025-06-11T22:00:21.0853340+07:00 [DBG] (///) Hosting stopped

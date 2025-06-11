@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/providers/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { UserRole } from '@/types/auth';
 import { useLecturer, useUpdateLecturer } from '@/hooks/use-lecturers';
 import { LecturerForm } from '@/components/features/lecturers/lecturer-form';
@@ -36,7 +36,7 @@ const mockFaculties = [
 export default function LecturerDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const lecturerCode = params.lecturer_code as string;
 
   const { data: lecturer, isLoading, error } = useLecturer(lecturerCode);
@@ -46,7 +46,8 @@ export default function LecturerDetailPage() {
     }
   });
 
-  const canEdit = user?.role === UserRole.PGV;
+  const userRoles = session?.user?.roles || [];
+  const canEdit = userRoles.includes('PGV');
 
   const handleSubmit = async (values: LecturerFormValues) => {
     if (!lecturer) return;

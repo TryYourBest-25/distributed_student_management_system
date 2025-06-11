@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useAuth } from "@/lib/providers/AuthProvider";
+import { useSession } from "next-auth/react";
 import { UserRole } from "@/types/auth";
 import PageHeader from "@/components/core/page-header";
 import { ClassDataTable } from "@/components/features/classes/class-data-table";
@@ -9,6 +9,8 @@ import { columns as classColumnsFunction } from "@/components/features/classes/c
 import { useClasses, useCreateClass, useDeleteClass } from "@/hooks/use-classes";
 import { Class, classFormToApiRequest } from "@/types/class";
 import { ClassFormValues } from "@/lib/validators/class-validator";
+import { useTenantContext } from "@/contexts/tenant-context";
+import { TenantNotSelected } from "@/components/tenant-not-selected";
 
 const MOCK_FACULTIES_PAGE_DATA = [
   { value: "CNTT", label: "Khoa Công nghệ Thông tin" },
@@ -17,31 +19,35 @@ const MOCK_FACULTIES_PAGE_DATA = [
 ];
 
 export default function ClassesPage() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const { selectedTenant, getFacultyCode, getFacultyServicePath } = useTenantContext();
 
-  // Determine faculty code - hiện tại chỉ test với it-faculty
-  const facultyCode = user?.role === UserRole.KHOA 
-    ? user.faculty_code || 'it-faculty'
-    : 'it-faculty'; // PGV cũng chỉ xem it-faculty trong giai đoạn test
+  // Lấy faculty code và service path từ tenant được chọn
+  const userRoles = session?.user?.roles || [];
+  const facultyCode = getFacultyCode();
+  const servicePath = getFacultyServicePath();
 
   // Fetch classes data from API
-  const { data: classes = [], isLoading, error } = useClasses(facultyCode);
+  const { data: classes = [], isLoading, error } = useClasses(facultyCode, servicePath);
   
   // Create and delete class mutations
-  const createClassMutation = useCreateClass(facultyCode);
-  const deleteClassMutation = useDeleteClass(facultyCode);
+  const createClassMutation = useCreateClass(facultyCode, servicePath);
+  const deleteClassMutation = useDeleteClass(facultyCode, servicePath);
 
   const canManage = useMemo(() => {
-    return user?.role === UserRole.PGV || user?.role === UserRole.KHOA;
-  }, [user?.role]);
+    return userRoles.includes('PGV') || userRoles.includes('KHOA');
+  }, [userRoles]);
 
   // Memoize the actual columns array by calling the function
   const actualClassColumns = useMemo(() => classColumnsFunction(), []);
 
   const pageTitle = useMemo(() => {
+    if (selectedTenant) {
+      return `Lớp học ${selectedTenant.name}`;
+    }
     const facultyInfo = MOCK_FACULTIES_PAGE_DATA.find(f => f.value === facultyCode);
     return facultyInfo ? `Lớp học ${facultyInfo.label}` : `Lớp học Khoa ${facultyCode}`;
-  }, [facultyCode]);
+  }, [selectedTenant, facultyCode]);
 
 
 
@@ -61,6 +67,16 @@ export default function ClassesPage() {
       console.error('Error deleting class:', error);
     }
   };
+
+  // Hiển thị thông báo nếu chưa chọn tenant
+  if (!selectedTenant) {
+    return (
+      <div className="space-y-6 py-4 sm:py-6 md:py-8">
+        <PageHeader title="Lớp học" />
+        <TenantNotSelected message="Vui lòng chọn khoa để xem danh sách lớp học." />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -88,7 +104,7 @@ export default function ClassesPage() {
     <div className="space-y-6 py-4 sm:py-6 md:py-8">
       <PageHeader
         title={pageTitle}
-        description={`Hiển thị ${classes.length} lớp học từ API khoa ${facultyCode}`}
+        description={`Hiển thị ${classes.length} lớp học từ API khoa ${selectedTenant?.name || facultyCode}`}
       />
       <ClassDataTable
         columns={actualClassColumns}

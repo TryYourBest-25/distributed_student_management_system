@@ -14,48 +14,48 @@ import {
 export const creditClassKeys = {
   all: ['creditClasses'] as const,
   lists: () => [...creditClassKeys.all, 'list'] as const,
-  list: (facultyCode: string, params: GridifyQueryParams) => [...creditClassKeys.lists(), facultyCode, params] as const,
-  listWithDisplay: (facultyCode: string, params: GridifyQueryParams) => [...creditClassKeys.lists(), 'display', facultyCode, params] as const,
+  list: (facultyCode: string, servicePath: string, params: GridifyQueryParams) => [...creditClassKeys.lists(), facultyCode, servicePath, params] as const,
+  listWithDisplay: (facultyCode: string, servicePath: string, params: GridifyQueryParams) => [...creditClassKeys.lists(), 'display', facultyCode, servicePath, params] as const,
   details: () => [...creditClassKeys.all, 'detail'] as const,
-  detail: (facultyCode: string, creditClassId: number) => [...creditClassKeys.details(), facultyCode, creditClassId] as const,
+  detail: (facultyCode: string, servicePath: string, creditClassId: number) => [...creditClassKeys.details(), facultyCode, servicePath, creditClassId] as const,
   students: () => [...creditClassKeys.all, 'students'] as const,
-  studentsInClass: (facultyCode: string, creditClassId: number, params: GridifyQueryParams) => [...creditClassKeys.students(), facultyCode, creditClassId, params] as const,
+  studentsInClass: (facultyCode: string, servicePath: string, creditClassId: number, params: GridifyQueryParams) => [...creditClassKeys.students(), facultyCode, servicePath, creditClassId, params] as const,
 };
 
 // Get credit classes for a faculty
-export const useCreditClasses = (facultyCode: string, params: GridifyQueryParams = {}) => {
+export const useCreditClasses = (facultyCode: string, servicePath: string, params: GridifyQueryParams = {}) => {
   return useQuery({
-    queryKey: creditClassKeys.list(facultyCode, params),
+    queryKey: creditClassKeys.list(facultyCode, servicePath, params),
     queryFn: async () => {
-      const response = await creditClassService.getAllCreditClasses(facultyCode, params);
+      const response = await creditClassService.getAllCreditClasses(facultyCode, servicePath, params);
       return response;
     },
-    enabled: !!facultyCode,
+    enabled: !!facultyCode && !!servicePath,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 // Get credit classes with display information
-export const useCreditClassesWithDisplayInfo = (facultyCode: string, params: GridifyQueryParams = {}) => {
+export const useCreditClassesWithDisplayInfo = (facultyCode: string, servicePath: string, params: GridifyQueryParams = {}) => {
   return useQuery({
-    queryKey: creditClassKeys.listWithDisplay(facultyCode, params),
+    queryKey: creditClassKeys.listWithDisplay(facultyCode, servicePath, params),
     queryFn: async () => {
-      const response = await creditClassService.getCreditClassesWithDisplayInfo(facultyCode, params);
+      const response = await creditClassService.getCreditClassesWithDisplayInfo(facultyCode, servicePath, params);
       return response;
     },
-    enabled: !!facultyCode,
+    enabled: !!facultyCode && !!servicePath,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 // Get credit class detail by ID
-export const useCreditClass = (facultyCode: string, creditClassId: number) => {
+export const useCreditClass = (facultyCode: string, servicePath: string, creditClassId: number) => {
   return useQuery({
-    queryKey: creditClassKeys.detail(facultyCode, creditClassId),
+    queryKey: creditClassKeys.detail(facultyCode, servicePath, creditClassId),
     queryFn: async () => {
-      return creditClassService.getCreditClassById(facultyCode, creditClassId);
+      return creditClassService.getCreditClassById(facultyCode, servicePath, creditClassId);
     },
-    enabled: !!facultyCode && !!creditClassId,
+    enabled: !!facultyCode && !!servicePath && !!creditClassId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -63,21 +63,22 @@ export const useCreditClass = (facultyCode: string, creditClassId: number) => {
 // Get students in credit class
 export const useStudentsInCreditClass = (
   facultyCode: string, 
+  servicePath: string,
   creditClassId: number, 
   params: GridifyQueryParams = {}
 ) => {
   return useQuery({
-    queryKey: creditClassKeys.studentsInClass(facultyCode, creditClassId, params),
+    queryKey: creditClassKeys.studentsInClass(facultyCode, servicePath, creditClassId, params),
     queryFn: async () => {
-      return creditClassService.getStudentsInCreditClass(facultyCode, creditClassId, params);
+      return creditClassService.getStudentsInCreditClass(facultyCode, servicePath, creditClassId, params);
     },
-    enabled: !!facultyCode && !!creditClassId,
+    enabled: !!facultyCode && !!servicePath && !!creditClassId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
 // Create credit class mutation
-export const useCreateCreditClass = (facultyCode: string, options?: {
+export const useCreateCreditClass = (facultyCode: string, servicePath: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -85,7 +86,7 @@ export const useCreateCreditClass = (facultyCode: string, options?: {
   
   return useMutation({
     mutationFn: async (data: CreateCreditClassRequest) => {
-      return creditClassService.createCreditClass(facultyCode, data);
+      return creditClassService.createCreditClass(facultyCode, servicePath, data);
     },
     onSuccess: (result, variables) => {
       toast.success(`Đã tạo lớp tín chỉ ${variables.courseCode}.${variables.groupNumber} thành công!`);
@@ -103,7 +104,7 @@ export const useCreateCreditClass = (facultyCode: string, options?: {
 };
 
 // Update credit class mutation
-export const useUpdateCreditClass = (facultyCode: string, creditClassId: number, options?: {
+export const useUpdateCreditClass = (facultyCode: string, servicePath: string, creditClassId: number, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -111,7 +112,7 @@ export const useUpdateCreditClass = (facultyCode: string, creditClassId: number,
   
   return useMutation({
     mutationFn: async (data: UpdateCreditClassRequest) => {
-      return creditClassService.updateCreditClass(facultyCode, creditClassId, data);
+      return creditClassService.updateCreditClass(facultyCode, servicePath, creditClassId, data);
     },
     onSuccess: (result, variables) => {
       toast.success(`Đã cập nhật lớp tín chỉ ${variables.courseCode}.${variables.groupNumber} thành công!`);
@@ -120,7 +121,7 @@ export const useUpdateCreditClass = (facultyCode: string, creditClassId: number,
         queryKey: creditClassKeys.lists() 
       });
       queryClient.invalidateQueries({ 
-        queryKey: creditClassKeys.detail(facultyCode, creditClassId) 
+        queryKey: creditClassKeys.detail(facultyCode, servicePath, creditClassId) 
       });
       options?.onSuccess?.();
     },
@@ -132,7 +133,7 @@ export const useUpdateCreditClass = (facultyCode: string, creditClassId: number,
 };
 
 // Add student to credit class mutation
-export const useAddStudentToCreditClass = (facultyCode: string, creditClassId: number, options?: {
+export const useAddStudentToCreditClass = (facultyCode: string, servicePath: string, creditClassId: number, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -140,16 +141,16 @@ export const useAddStudentToCreditClass = (facultyCode: string, creditClassId: n
   
   return useMutation({
     mutationFn: async (studentCode: string) => {
-      return creditClassService.addStudentToCreditClass(facultyCode, creditClassId, studentCode);
+      return creditClassService.addStudentToCreditClass(facultyCode, servicePath, creditClassId, studentCode);
     },
     onSuccess: (result, studentCode) => {
       toast.success(`Đã thêm sinh viên ${studentCode} vào lớp tín chỉ thành công!`);
       // Invalidate related queries
       queryClient.invalidateQueries({ 
-        queryKey: creditClassKeys.studentsInClass(facultyCode, creditClassId, {}) 
+        queryKey: creditClassKeys.studentsInClass(facultyCode, servicePath, creditClassId, {}) 
       });
       queryClient.invalidateQueries({ 
-        queryKey: creditClassKeys.detail(facultyCode, creditClassId) 
+        queryKey: creditClassKeys.detail(facultyCode, servicePath, creditClassId) 
       });
       options?.onSuccess?.();
     },
@@ -161,7 +162,7 @@ export const useAddStudentToCreditClass = (facultyCode: string, creditClassId: n
 };
 
 // Delete credit classes mutation
-export const useDeleteCreditClasses = (facultyCode: string, options?: {
+export const useDeleteCreditClasses = (facultyCode: string, servicePath: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -169,7 +170,7 @@ export const useDeleteCreditClasses = (facultyCode: string, options?: {
   
   return useMutation({
     mutationFn: async (creditClassIds: number[]) => {
-      return creditClassService.deleteCreditClasses(facultyCode, creditClassIds);
+      return creditClassService.deleteCreditClasses(facultyCode, servicePath, creditClassIds);
     },
     onSuccess: (result, creditClassIds) => {
       const count = creditClassIds.length;
@@ -181,7 +182,7 @@ export const useDeleteCreditClasses = (facultyCode: string, options?: {
       // Invalidate detail queries for deleted classes
       creditClassIds.forEach(id => {
         queryClient.invalidateQueries({ 
-          queryKey: creditClassKeys.detail(facultyCode, id) 
+          queryKey: creditClassKeys.detail(facultyCode, servicePath, id) 
         });
       });
       options?.onSuccess?.();
