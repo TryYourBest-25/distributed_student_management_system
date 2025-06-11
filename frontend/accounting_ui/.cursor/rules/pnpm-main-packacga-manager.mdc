@@ -1,0 +1,7 @@
+---
+description: pnpm is main package manager
+globs: 
+alwaysApply: false
+---
+- Dùng pnpm bất cứ khi nào cần cài thêm package.
+- Dùng pnpm cho run script.
