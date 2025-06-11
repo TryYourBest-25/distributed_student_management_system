@@ -6,7 +6,12 @@ namespace FacultyService.Domain.Port;
 
 public interface IStudentPort
 {
-    Task<Result<Student>> CreateStudentAsync(Student student);
+    ValueTask<Result<StudentCode>> CreateStudentAsync(Student student,
+        CancellationToken cancellationToken = default);
 
-    Task<Result<int>> DeleteStudentAsync(StudentCode studentCode, FacultyCode facultyCode);
+    ValueTask<Result<int>> DeleteStudentAsync(StudentCode studentCode, FacultyCode facultyCode,
+        CancellationToken cancellationToken = default);
+
+    ValueTask<Result<Student>> GetStudentAsync(StudentCode studentCode, FacultyCode facultyCode,
+        CancellationToken cancellationToken = default);
 }

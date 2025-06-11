@@ -11,7 +11,7 @@ using Shared.Domain.ValueObject;
 namespace AcademicService.Api.Lecturers.Controller;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public partial class LecturersController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -26,7 +26,7 @@ public partial class LecturersController : ControllerBase
         CancellationToken cancellationToken)
     {
         var command = new CreateLectureCommand(
-            request.NewLecturerCode,
+            request.LecturerCode,
             request.FirstName,
             request.LastName,
             request.Degree,
@@ -50,7 +50,7 @@ public partial class LecturersController : ControllerBase
     {
         var command = new UpdateLectureCommand(
             lecturerCode,
-            request.NewLecturerCode,
+            request.LecturerCode,
             request.FirstName,
             request.LastName,
             request.Degree,
@@ -97,8 +97,8 @@ public partial class LecturersController
         return result != null ? Ok(result) : NotFound($"Không tìm thấy giảng viên với mã {lecturerCode}");
     }
 
-    [HttpGet("search/")]
-    public async Task<ActionResult<Paging<LecturerResponse>>> SearchLecturers(
+    [HttpGet("search")]
+    public async Task<ActionResult<IPagedList<LecturerResponse>>> SearchLecturers(
         [FromQuery] GridifyQuery gridifyQuery,
         CancellationToken cancellationToken = default)
     {

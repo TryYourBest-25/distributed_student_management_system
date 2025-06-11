@@ -9,13 +9,17 @@ using Microsoft.Extensions.Logging;
 
 namespace AcademicService.Application.Lecturers.CommandHandler;
 
-public class CreateLectureCommandHandler(AcademicDbContext dbContext, ILogger logger)
+public class CreateLectureCommandHandler(AcademicDbContext dbContext, ILogger<CreateLectureCommandHandler> logger)
     : IRequestHandler<CreateLectureCommand, LecturerCode>
 {
     public async Task<LecturerCode> Handle(CreateLectureCommand request, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Creating lecturer {LecturerCode} with name {FirstName} {LastName}", request.LecturerCode,
+            request.FirstName, request.LastName);
+
         var lecture = new Lecturer
         {
+            LecturerCode = request.LecturerCode,
             FirstName = request.FirstName,
             LastName = request.LastName,
             Degree = request.Degree,
@@ -32,12 +36,12 @@ public class CreateLectureCommandHandler(AcademicDbContext dbContext, ILogger lo
         }
         catch (UniqueConstraintException ex)
         {
-            if (ex.Message.Contains("PRIMARY"))
+            if (ex.InnerException?.Message.Contains("pk") ?? false)
             {
                 throw new DuplicateException($"Mã giảng viên {lecture.LecturerCode} đã tồn tại");
             }
 
-            if (ex.Message.Contains("lecturer_name"))
+            if (ex.InnerException?.Message.Contains("uq") ?? false)
             {
                 throw new DuplicateException($"Tên giảng viên {lecture.FirstName} {lecture.LastName} đã tồn tại");
             }

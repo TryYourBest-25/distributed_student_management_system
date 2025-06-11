@@ -14,16 +14,17 @@ public class GetAllCreditClassQueryHandler(FacultyDbContext dbContext)
         CancellationToken cancellationToken)
     {
         var creditClasses = await dbContext.CreditClasses
-            .ApplyOrdering(request.GridifyQuery)
+            .ApplyOrdering(request.GridifyQuery.OrderBy ?? "CreditClassId")
             .Select(c => new CreditClassBasicResponse
             {
-                Id = c.CreditClassId,
+                CreditClassId = c.CreditClassId,
                 CourseCode = c.CourseCode,
                 GroupNumber = c.GroupNumber,
                 CurrentStudent = c.Registrations.Count,
                 MinStudent = c.MinStudent,
                 AcademicYear = c.AcademicYear,
                 Semester = c.Semester,
+                IsCancelled = c.IsCancelled
             })
             .ToPagedListAsync(request.GridifyQuery.Page, request.GridifyQuery.PageSize,
                 cancellationToken: cancellationToken);

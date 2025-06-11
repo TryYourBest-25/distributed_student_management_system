@@ -7,14 +7,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Elastic.Serilog.Sinks" Version="8.12.3" />
+        <PackageReference Include="Elastic.Serilog.Sinks" Version="8.18.1"/>
       <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3" />
-      <PackageReference Include="Finbuckle.MultiTenant" Version="9.1.4" />
-      <PackageReference Include="Finbuckle.MultiTenant.AspNetCore" Version="9.1.4" />
-      <PackageReference Include="Finbuckle.MultiTenant.EntityFrameworkCore" Version="9.1.4" />
+        <PackageReference Include="Finbuckle.MultiTenant" Version="9.2.0"/>
+        <PackageReference Include="Finbuckle.MultiTenant.AspNetCore" Version="9.2.0"/>
+        <PackageReference Include="Finbuckle.MultiTenant.EntityFrameworkCore" Version="9.2.0"/>
       <PackageReference Include="FluentResults" Version="3.16.0" />
       <PackageReference Include="Gridify.EntityFramework" Version="2.16.3" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>

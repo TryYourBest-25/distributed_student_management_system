@@ -9,38 +9,43 @@ using Shared.Exception;
 
 namespace AcademicService.Application.Courses.CommandHandler;
 
-public class UpdateCourseCommandHandler(AcademicDbContext context, ILogger logger)
+public class UpdateCourseCommandHandler(AcademicDbContext context, ILogger<UpdateCourseCommandHandler> logger)
     : IRequestHandler<UpdateCourseCommand, CourseCode>
 {
     public async Task<CourseCode> Handle(UpdateCourseCommand request, CancellationToken cancellationToken)
     {
-        var course = await context.Courses.Where(c => c.CourseCode == request.OldCourseCode.Value)
-                         .FirstOrDefaultAsync(cancellationToken) ??
-                     throw new ResourceNotFoundException($"Khóa học với mã {request.CourseCode} không tồn tại");
-
-        course.CourseName = request.CourseName;
-        course.LectureCredit = request.LectureCredit;
-        course.LabCredit = request.LabCredit;
-        course.CourseCode = request.CourseCode;
+        logger.LogInformation("Updating course {OldCourseCode} to {NewCourseCode}", request.OldCourseCode,
+            request.CourseCode);
 
         try
         {
-            context.Courses.Update(course);
-            await context.SaveChangesAsync(cancellationToken);
-            return course.CourseCode;
+            var result = await context.Courses.Where(c => c.CourseCode == request.OldCourseCode.Value)
+                .ExecuteUpdateAsync(c => c.SetProperty(p => p.CourseCode, request.CourseCode.Value)
+                    .SetProperty(p => p.CourseName, request.CourseName.Value)
+                    .SetProperty(p => p.LectureCredit, request.LectureCredit.Value)
+                    .SetProperty(p => p.LabCredit, request.LabCredit.Value), cancellationToken);
+
+            return result > 0
+                ? request.CourseCode
+                : throw new ResourceNotFoundException("Không tìm thấy khóa học với mã {request.OldCourseCode}");
         }
         catch (UniqueConstraintException ex)
         {
-            if (ex.Message.Contains("course_code"))
+            if (ex.InnerException?.Message.Contains("pk") ?? false)
             {
-                throw new DuplicateException($"Mã khóa học {course.CourseCode} đã tồn tại");
+                throw new DuplicateException($"Mã khóa học {request.CourseCode} đã tồn tại");
             }
 
-            if (ex.Message.Contains("course_name"))
+            if (ex.InnerException?.Message.Contains("uq") ?? false)
             {
-                throw new DuplicateException($"Tên khóa học {course.CourseName} đã tồn tại");
+                throw new DuplicateException($"Tên khóa học {request.CourseName} đã tồn tại");
             }
 
+            logger.LogError(ex, "Lỗi khi cập nhật khóa học");
+            throw;
+        }
+        catch (Exception ex)
+        {
             logger.LogError(ex, "Lỗi khi cập nhật khóa học");
             throw;
         }

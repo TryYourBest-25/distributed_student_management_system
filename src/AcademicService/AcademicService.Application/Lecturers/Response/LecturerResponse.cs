@@ -10,5 +10,4 @@ public class LecturerResponse
     public string? Specialization { get; set; }
 
     public string FacultyCode { get; set; } = null!;
-    // Có thể thêm FacultyBasicResponse nếu cần
 }

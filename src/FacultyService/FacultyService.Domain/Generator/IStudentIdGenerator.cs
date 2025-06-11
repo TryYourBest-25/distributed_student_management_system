@@ -6,7 +6,7 @@ namespace FacultyService.Domain.Generator;
 
 public interface IStudentIdGenerator
 {
-    StudentCode Generate(ClassCode classCode);
+    ValueTask<StudentCode> Generate(ClassCode classCode);
 
     IImmutableList<StudentCode> Generate(ClassCode classCode, int count);
 }

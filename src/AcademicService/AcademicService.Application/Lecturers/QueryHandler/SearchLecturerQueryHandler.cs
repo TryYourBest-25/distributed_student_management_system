@@ -1,6 +1,7 @@
 using AcademicService.Application.DbContext;
 using AcademicService.Application.Lecturers.Query;
 using AcademicService.Application.Lecturers.Response;
+using Arch.EntityFrameworkCore.UnitOfWork.Collections;
 using Gridify;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +11,10 @@ using Shared.Infra.Entity;
 namespace AcademicService.Application.Lecturers.QueryHandler;
 
 public class SearchLecturerQueryHandler(AcademicDbContext context)
-    : IRequestHandler<SearchLecturerQuery, Paging<LecturerResponse>>
+    : IRequestHandler<SearchLecturerQuery, IPagedList<LecturerResponse>>
 {
-    public async Task<Paging<LecturerResponse>> Handle(SearchLecturerQuery request, CancellationToken cancellationToken)
+    public async Task<IPagedList<LecturerResponse>> Handle(SearchLecturerQuery request,
+        CancellationToken cancellationToken)
     {
         var mapper = new GridifyMapper<Lecturer>().GenerateMappings();
 
@@ -24,6 +26,7 @@ public class SearchLecturerQueryHandler(AcademicDbContext context)
         var lecturers = await context.Lecturers
             .AsNoTracking()
             .ApplyFiltering(request.GridifyQuery, mapper)
+            .ApplyOrdering(request.GridifyQuery.OrderBy ?? "LecturerCode")
             .Select(l => new LecturerResponse
             {
                 LecturerCode = l.LecturerCode,
@@ -33,12 +36,9 @@ public class SearchLecturerQueryHandler(AcademicDbContext context)
                 AcademicRank = l.AcademicRank,
                 Specialization = l.Specialization,
                 FacultyCode = l.FacultyCode
-            }).ToListAsync(cancellationToken);
+            }).ToPagedListAsync(request.GridifyQuery.Page, request.GridifyQuery.PageSize,
+                cancellationToken: cancellationToken);
 
-        return new Paging<LecturerResponse>
-        {
-            Count = lecturers.Count,
-            Data = lecturers
-        };
+        return lecturers;
     }
 }

@@ -4,4 +4,4 @@ using Shared.Domain.ValueObject;
 
 namespace FacultyService.Application.Students.Query;
 
-public record StudentByIdQuery(StudentCode StudentCode) : IRequest<StudentBasicResponse?>;
+public record StudentByIdQuery(StudentCode StudentCode) : IRequest<StudentDetailReponse?>;

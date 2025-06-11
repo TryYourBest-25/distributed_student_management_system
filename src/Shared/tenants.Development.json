@@ -11,17 +11,17 @@
           "Identifier": "IT-FACULTY",
           "Name": "Công Nghệ Thông Tin",
           "Location": {
-            "Public": "https://localhost:14100",
-            "Private": "https://localhost:14101"
+            "Public": "https://localhost:30000",
+            "Private": "https://localhost:30002"
           }
         },
         {
-          "Id": "VT",
+          "Id": "DTVT",
           "Identifier": "VT-FACULTY",
           "Name": "Điện Tử Viễn thông",
           "Location": {
-            "Public": "https://localhost:14200",
-            "Private": "https://localhost:14201"
+            "Public": "https://localhost:30010",
+            "Private": "https://localhost:30012"
           }
         }
       ]

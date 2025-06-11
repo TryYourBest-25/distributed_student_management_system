@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FacultyService.Application.Classes.CommandHandler;
 
-public class DeleteClassByIdsCommandHandler(FacultyDbContext dbContext, ILogger logger)
+public class DeleteClassByIdsCommandHandler(FacultyDbContext dbContext, ILogger<DeleteClassByIdsCommandHandler> logger)
     : IRequestHandler<DeleteClassByIdsCommand, int>
 {
     public async Task<int> Handle(DeleteClassByIdsCommand request, CancellationToken cancellationToken)
@@ -14,9 +14,9 @@ public class DeleteClassByIdsCommandHandler(FacultyDbContext dbContext, ILogger 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var total = await dbContext.GlobalClassCodes.Where(c => request.ClassCodes.Contains(c.ClassCode))
+            var classCodes = request.ClassCodes.Select(c => c.Value).ToList();
+            var total = await dbContext.GlobalClassCodes.Where(c => classCodes.Contains(c.ClassCode))
                 .ExecuteDeleteAsync(cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return total;
         }

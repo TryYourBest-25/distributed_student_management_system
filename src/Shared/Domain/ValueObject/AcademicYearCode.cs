@@ -4,21 +4,34 @@ namespace Shared.Domain.ValueObject;
 
 public record AcademicYearCode
 {
-    public AcademicYearCode(string startYear)
+    public AcademicYearCode(string academicYear)
     {
-        if (string.IsNullOrWhiteSpace(startYear))
+        if (string.IsNullOrWhiteSpace(academicYear))
         {
             throw new BadInputException($"Năm bắt đầu không được để trống.");
         }
 
-        if (DateOnly.TryParseExact(startYear, "yyyy", out var startYearDate))
+        if (academicYear.Contains('-'))
         {
+            var years = academicYear.Split("-");
+
+            DateOnly.TryParseExact(years[0], "yyyy", out var startYearDate);
+            DateOnly.TryParseExact(years[1], "yyyy", out var endYearDate);
+
             StartYearValue = startYearDate.ToString("yyyy");
-            EndYearValue = (startYearDate.AddYears(1)).ToString("yyyy");
+            EndYearValue = endYearDate.ToString("yyyy");
+
+            if (startYearDate >= endYearDate)
+            {
+                throw new BadInputException($"Năm bắt đầu phải nhỏ hơn năm kết thúc.");
+            }
         }
         else
         {
-            throw new BadInputException($"Năm bắt đầu không hợp lệ. Năm bắt đầu phải có định dạng yyyy.");
+            DateOnly.TryParseExact(academicYear, "yyyy", out var academicYearDate);
+
+            StartYearValue = academicYearDate.ToString("yyyy");
+            EndYearValue = academicYearDate.AddYears(1).ToString("yyyy");
         }
     }
 

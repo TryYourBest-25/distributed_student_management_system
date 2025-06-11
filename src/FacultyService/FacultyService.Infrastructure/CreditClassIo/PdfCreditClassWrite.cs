@@ -71,7 +71,7 @@ public class PdfCreditClassWrite : IWritingToFile<ExportCreditClassIoRecord>
                                 var creditClass = data.CreditClasses[i];
                                 t.Cell().Element(CellStyle).Text((i + 1).ToString());
                                 t.Cell().Element(CellStyle).Text(creditClass.CourseName);
-                                t.Cell().Element(CellStyle).Text(creditClass.GroupNumber);
+                                t.Cell().Element(CellStyle).Text(creditClass.GroupNumber.ToString());
                                 t.Cell().Element(CellStyle)
                                     .Text($"{creditClass.LastNameLecturer} {creditClass.FirstNameLecturer}");
                                 t.Cell().Element(CellStyle).Text(creditClass.MinStudent.ToString());

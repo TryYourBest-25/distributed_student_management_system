@@ -50,8 +50,12 @@ public class LecturerEntityTypeConfiguration : IEntityTypeConfiguration<Lecturer
 
         builder.Property(c => c.Specialization)
             .HasMaxLength(50)
-            .IsRequired()
             .HasComment("Chuyên môn")
             .HasColumnName("specialization");
+        builder.HasOne(d => d.FacultyCodeNavigation)
+            .WithMany(p => p.Lecturers)
+            .HasForeignKey(d => d.FacultyCode)
+            .OnDelete(DeleteBehavior.ClientSetNull)
+            .HasConstraintName("fk_lecturer_faculty");
     }
 }

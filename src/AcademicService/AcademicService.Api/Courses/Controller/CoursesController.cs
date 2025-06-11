@@ -13,7 +13,7 @@ using Shared.Domain.ValueObject;
 namespace AcademicService.Api.Courses.Controller;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public partial class CoursesController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -91,7 +91,7 @@ public partial class CoursesController
         return result != null ? Ok(result) : NotFound($"Không tìm thấy khóa học với mã {courseCode}");
     }
 
-    [HttpGet("search/")]
+    [HttpGet("search")]
     public async Task<ActionResult<IPagedList<CourseBasicResponse>>> SearchCourses(
         [FromQuery] GridifyQuery gridifyQuery,
         CancellationToken cancellationToken = default)

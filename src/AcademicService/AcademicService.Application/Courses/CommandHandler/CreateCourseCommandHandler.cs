@@ -9,11 +9,14 @@ using Shared.Infra.Entity;
 
 namespace AcademicService.Application.Courses.CommandHandler;
 
-public class CreateCourseCommandHandler(AcademicDbContext context, ILogger logger)
+public class CreateCourseCommandHandler(AcademicDbContext context, ILogger<CreateCourseCommandHandler> logger)
     : IRequestHandler<CreateCourseCommand, CourseCode>
 {
     public async Task<CourseCode> Handle(CreateCourseCommand request, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Creating course {CourseCode} with name {CourseName}", request.CourseCode,
+            request.CourseName);
+
         var courseEf = new Course
         {
             CourseCode = request.CourseCode,
@@ -30,12 +33,12 @@ public class CreateCourseCommandHandler(AcademicDbContext context, ILogger logge
         }
         catch (UniqueConstraintException ex)
         {
-            if (ex.Message.Contains("PRIMARY"))
+            if (ex.InnerException?.Message.Contains("pk") ?? false)
             {
                 throw new DuplicateException($"Mã khóa học {request.CourseCode} đã tồn tại");
             }
 
-            if (ex.Message.Contains("course_name"))
+            if (ex.InnerException?.Message.Contains("uq") ?? false)
             {
                 throw new DuplicateException($"Tên khóa học {request.CourseName} đã tồn tại");
             }

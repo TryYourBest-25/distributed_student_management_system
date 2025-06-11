@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace FacultyService.Application.CreditClasses.CommandHandler;
 
-public class DeleteRegistrationByStudentCodesCommandHandler(FacultyDbContext dbContext, ILogger logger)
+public class DeleteRegistrationByStudentCodesCommandHandler(
+    FacultyDbContext dbContext,
+    ILogger<DeleteRegistrationByStudentCodesCommandHandler> logger)
     : IRequestHandler<DeleteRegistrationByStudentCodesCommand, int>
 {
     public async Task<int> Handle(DeleteRegistrationByStudentCodesCommand request, CancellationToken cancellationToken)

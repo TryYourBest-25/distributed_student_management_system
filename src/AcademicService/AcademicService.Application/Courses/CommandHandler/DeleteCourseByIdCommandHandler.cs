@@ -8,11 +8,13 @@ using Shared.Exception;
 
 namespace AcademicService.Application.Courses.CommandHandler;
 
-public class DeleteCourseByIdCommandHandler(AcademicDbContext context, ILogger logger)
+public class DeleteCourseByIdCommandHandler(AcademicDbContext context, ILogger<DeleteCourseByIdCommandHandler> logger)
     : IRequestHandler<DeleteCourseByIdCommand, CourseCode>
 {
     public async Task<CourseCode> Handle(DeleteCourseByIdCommand request, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Deleting course {CourseCode}", request.CourseCode);
+
         var course =
             await context.Courses.Where(c => c.CourseCode == request.CourseCode.Value)
                 .FirstOrDefaultAsync(cancellationToken) ??

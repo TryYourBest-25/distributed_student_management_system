@@ -14,17 +14,24 @@ using Shared.Exception;
 using Shared.FileHelper;
 using Shared.Infra.StreamHelper;
 using TuitionService.Api.Controllers.Request;
+using TuitionService.Api.Controllers.Response;
 using TuitionService.Application.IoDto;
 using TuitionService.Domain;
 using TuitionService.Domain.Aggregate;
 using TuitionService.Domain.Entity;
 using TuitionService.Domain.ValueObject;
+using TuitionService.Infrastructure.TuitionIo;
+using TuitionService.Api.JsonConverters;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
-    .ConfigureContainer<ContainerBuilder>(containerBuilder => { }).UseSerilog((context, provider, configuration) =>
+    .ConfigureContainer<ContainerBuilder>(containerBuilder =>
+    {
+        containerBuilder.RegisterType<PdfStudentTuitionWriter>().As<IWritingToFile<ExportStudentTuitionIoRecord>>()
+            .SingleInstance();
+    }).UseSerilog((context, provider, configuration) =>
     {
         configuration.ReadFrom.Configuration(context.Configuration);
     });
@@ -41,7 +48,19 @@ builder.Services.Configure<RouteOptions>(options =>
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Add custom DateOnly converter to handle YYYY-MM-DD format correctly
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -95,87 +114,59 @@ var versionSet = app.NewApiVersionSet()
     .ReportApiVersions()
     .Build();
 
-var group = app.MapGroup("/api/v{version:apiVersion}")
-    .WithApiVersionSet(versionSet);
+app.UseCors();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseExceptionHandler();
 
 
 app.MapControllers();
 
-app.Run();
+var group = app.MapGroup("/api/v{version:apiVersion}")
+    .WithApiVersionSet(versionSet);
 
-group.MapPut("/students/batch", async (List<StudentBasicInfoRequest> request, TuitionDbContext db, ILogger logger) =>
-    {
-        var students = request.Select(s => new StudentBasicInfoAg(s.StudentCode)
+
+group.MapGet("/students/{studentCode}",
+        async ([FromRoute] string studentCode, TuitionDbContext db, ILogger<Program> logger) =>
         {
-            FirstName = s.FirstName,
-            LastName = s.LastName,
-            ClassCode = s.ClassCode,
-            FacultyCode = s.FacultyCode
-        }).Select(r => new StudentBasicInfo
-        {
-            StudentCode = r.Id.Value,
-            FirstName = r.FirstName.Value,
-            LastName = r.LastName.Value,
-            ClassCode = r.ClassCode.Value,
-            FacultyCode = r.FacultyCode.Value
-        }).DistinctBy(s => s.StudentCode).ToList();
-
-        try
-        {
-            await using var transaction = await db.Database.BeginTransactionAsync();
-
-            var updated = await db.StudentBasicInfos
-                .Where(s => students.Select(s => s.StudentCode).Contains(s.StudentCode)).ExecuteUpdateAsync(s => s
-                    .SetProperty(s => s.FirstName, s => s.FirstName)
-                    .SetProperty(s => s.LastName, s => s.LastName)
-                    .SetProperty(s => s.ClassCode, s => s.ClassCode)
-                    .SetProperty(s => s.FacultyCode, s => s.FacultyCode));
-
-            var studentsToAdd = await db.StudentBasicInfos
-                .Where(s => !students.Select(s => s.StudentCode).Contains(s.StudentCode)).ToListAsync();
-
-            await db.StudentBasicInfos.AddRangeAsync(studentsToAdd);
-
-            await db.SaveChangesAsync();
-
-            await transaction.CommitAsync();
-
-            return Results.Ok();
-        }
-        catch (Exception e)
-        {
-            logger.LogError(e, "Lỗi khi tạo mới danh sách sinh viên");
-            await db.Database.RollbackTransactionAsync();
-            throw;
-        }
-
-        return Results.Ok();
-    })
-    .WithName("CreateStudentBatch")
+            var student = await db.StudentBasicInfos.Where(s => s.StudentCode == studentCode).Select(s =>
+                              new StudentDetailResponse
+                              {
+                                  StudentCode = s.StudentCode,
+                                  LastName = s.LastName,
+                                  FirstName = s.FirstName,
+                                  ClassCode = s.ClassCode,
+                                  FacultyCode = s.FacultyCode,
+                                  Tuitions = s.Tuitions.Select(t => new TuitionResponse
+                                  {
+                                      AcademicYear = t.AcademicYear,
+                                      Semester = t.Semester.ToString(),
+                                      TuitionAmount = t.TuitionFee,
+                                      TuitionPaid = t.TuitionPayments.Sum(p => p.AmountPaid)
+                                  }).ToList()
+                              }).FirstOrDefaultAsync() ??
+                          throw new ResourceNotFoundException($"Sinh viên không tồn tại: {studentCode}");
+            return Results.Ok(student);
+        }).WithName("GetStudent")
     .WithTags("Students")
-    .Produces(StatusCodes.Status200OK)
-    .Accepts<List<StudentBasicInfoRequest>>("application/json")
-    .WithDescription("Tạo mới danh sách sinh viên");
+    .Produces<StudentDetailResponse>(StatusCodes.Status200OK)
+    .WithDescription("Lấy thông tin sinh viên");
 
-group.MapPost("/students/tuitions",
-        async (RequiredTuitionStudentRequest request, TuitionDbContext db, ILogger logger) =>
+
+group.MapPost("/students/{studentCode}/tuitions",
+        async ([FromRoute] string studentCode, RequiredTuitionStudentRequest request, TuitionDbContext db,
+            ILogger<Program> logger) =>
         {
-            var tuition = new TuitionAg(new TuitionAgId(request.StudentCode, request.AcademicYear, request.Semester));
-
-            var student =
-                await db.StudentBasicInfos.FirstOrDefaultAsync(s => s.StudentCode == tuition.Id.StudentCode) ??
-                throw new ResourceNotFoundException($"Sinh viên không tồn tại: {request.StudentCode}");
-
             var newTuition = new Tuition
             {
-                StudentCode = tuition.Id.StudentCode,
-                AcademicYear = tuition.Id.AcademicYear,
-                Semester = tuition.Id.Semester,
-                TuitionFee = request.TuitionFee
+                StudentCode = new StudentCode(studentCode).Value,
+                AcademicYear = ((AcademicYearCode)request.AcademicYear).Value,
+                Semester = new Semester(request.Semester).Value,
+                TuitionFee = new Money(request.TuitionFee).Value
             };
 
             await db.Tuitions.AddAsync(newTuition);
@@ -190,10 +181,36 @@ group.MapPost("/students/tuitions",
     .WithDescription("Tạo mới học phí cho sinh viên");
 
 group.MapGet("/students",
-        async ([FromQuery(Name = "page")] int page, [FromQuery(Name = "size")] int size, TuitionDbContext db,
-            ILogger logger) =>
+        async ([AsParameters] GridifyQuery filter, TuitionDbContext db,
+            ILogger<Program> logger) =>
         {
-            var query = await db.StudentBasicInfos.AsNoTracking().ToPagedListAsync(page, size);
+            var query = await db.StudentBasicInfos.AsNoTracking().Select(s => new StudentBasicInfo
+            {
+                StudentCode = s.StudentCode,
+                LastName = s.LastName,
+                FirstName = s.FirstName,
+                ClassCode = s.ClassCode,
+                FacultyCode = s.FacultyCode
+            }).ToPagedListAsync(filter.Page, filter.PageSize);
+
+            return Results.Ok(query);
+        }).WithName("GetStudents")
+    .WithTags("Students")
+    .Produces<Paging<StudentBasicInfo>>(StatusCodes.Status200OK)
+    .WithDescription("Tìm kiếm sinh viên");
+
+group.MapGet("/students/search",
+        async ([AsParameters] GridifyQuery filter, TuitionDbContext db,
+            ILogger<Program> logger) =>
+        {
+            var query = await db.StudentBasicInfos.AsNoTracking().Select(s => new StudentBasicInfo
+            {
+                StudentCode = s.StudentCode,
+                LastName = s.LastName,
+                FirstName = s.FirstName,
+                ClassCode = s.ClassCode,
+                FacultyCode = s.FacultyCode
+            }).ApplyFiltering(filter).ToPagedListAsync(filter.Page, filter.PageSize);
 
             return Results.Ok(query);
         }).WithName("SearchStudent")
@@ -202,27 +219,51 @@ group.MapGet("/students",
     .WithDescription("Tìm kiếm sinh viên");
 
 
-group.MapGet("/students/{studentCode}/tuitions", async (string studentCode, TuitionDbContext db, ILogger logger) =>
-    {
-        var tuition = await db.Tuitions.Where(t => t.StudentCode == studentCode).ToListAsync();
+group.MapGet("/students/{studentCode}/tuitions",
+        async ([FromRoute] string studentCode, TuitionDbContext db, ILogger<Program> logger) =>
+        {
+            var tuition = await db.Tuitions.Where(t => t.StudentCode == studentCode).Select(t => new TuitionResponse
+            {
+                AcademicYear = t.AcademicYear,
+                Semester = t.Semester.ToString(),
+                TuitionAmount = t.TuitionFee,
+                TuitionPaid = t.TuitionPayments.Sum(p => p.AmountPaid)
+            }).ToListAsync();
 
-        return Results.Ok(tuition);
-    }).WithName("GetTuition")
+            return Results.Ok(tuition);
+        }).WithName("GetTuition")
     .WithTags("Tuition")
     .Produces<Tuition>(StatusCodes.Status200OK)
     .WithDescription("Lấy học phí của sinh viên");
 
-group.MapDelete("/students/{studentCode}/tuitions",
-        async (string studentCode, List<DeleteStudentTuitionRequest> request, TuitionDbContext db, ILogger logger) =>
+group.MapGet("/students/{studentCode}/tuitions/{academicYear}/{semester}/payments",
+        async ([FromRoute] string studentCode, [FromRoute] string academicYear, [FromRoute] int semester,
+            TuitionDbContext db, ILogger<Program> logger) =>
         {
-            var tuitions = await db.Tuitions.Where(t =>
-                t.StudentCode == studentCode &&
-                request.Any(r => r.AcademicYear == t.AcademicYear && r.Semester == t.Semester)).ToListAsync();
-            db.Tuitions.RemoveRange(tuitions);
+            var payments = await db.TuitionPayments
+                .Where(p => p.StudentCode == studentCode && p.AcademicYear == academicYear && p.Semester == semester)
+                .Select(p => new PaymentResponse
+                {
+                    PaymentDate = p.PaymentDate.ToString("dd/MM/yyyy"),
+                    AmountPaid = p.AmountPaid
+                }).ToListAsync();
+            return Results.Ok(payments);
+        }).WithName("GetTuitionPayments")
+    .WithTags("Tuition")
+    .Produces<PaymentResponse>(StatusCodes.Status200OK)
+    .WithDescription("Lấy danh sách thanh toán học phí của sinh viên");
 
-            await db.SaveChangesAsync();
+group.MapDelete("/students/{studentCode}/tuitions",
+        async ([FromRoute] string studentCode, [FromBody] List<DeleteStudentTuitionRequest> request,
+            TuitionDbContext db, ILogger<Program> logger) =>
+        {
+            var academicYears = request.Select(r => ((AcademicYearCode)r.AcademicYear).Value).ToList();
+            var semesters = request.Select(r => new Semester(r.Semester).Value).ToList();
+            var tuitions = await db.Tuitions.Where(t => t.StudentCode == studentCode &&
+                                                        academicYears.Contains(t.AcademicYear) &&
+                                                        semesters.Contains(t.Semester)).ExecuteDeleteAsync();
 
-            return Results.Ok();
+            return Results.Ok(tuitions);
         }).WithName("DeleteTuition")
     .WithTags("Tuition")
     .Produces(StatusCodes.Status200OK)
@@ -230,14 +271,24 @@ group.MapDelete("/students/{studentCode}/tuitions",
     .WithDescription("Xóa học phí của sinh viên");
 
 group.MapGet("/students/{studentCode}/tuitions/search", async ([FromRoute] string studentCode,
-        [FromQuery(Name = "filter")] string filter, [FromQuery(Name = "orderBy")] string orderBy,
-        [FromQuery(Name = "page")] int page, [FromQuery(Name = "pageSize")] int pageSize, TuitionDbContext db,
-        ILogger logger) =>
+        [AsParameters] GridifyQuery filter, TuitionDbContext db,
+        ILogger<Program> logger) =>
     {
         var query = await db.Tuitions.Where(t => t.StudentCode == studentCode).AsNoTracking()
-            .GridifyAsync(new GridifyQuery(page, pageSize, filter, orderBy));
+            .ApplyFiltering(filter)
+            .Select(t => new TuitionResponse
+            {
+                AcademicYear = t.AcademicYear,
+                Semester = t.Semester.ToString(),
+                TuitionAmount = t.TuitionFee,
+                TuitionPaid = t.TuitionPayments.Sum(p => p.AmountPaid)
+            }).ToListAsync();
 
-        return Results.Ok(query);
+        return Results.Ok(new Paging<TuitionResponse>
+        {
+            Data = query,
+            Count = query.Count()
+        });
     }).WithName("SearchTuition")
     .WithTags("Tuition")
     .Produces<Paging<Tuition>>(StatusCodes.Status200OK)
@@ -246,47 +297,108 @@ group.MapGet("/students/{studentCode}/tuitions/search", async ([FromRoute] strin
 
 group.MapPut("/students/{studentCode}/tuitions/{academicYear}/{semester}/payments", async (
         [FromRoute] string studentCode, [FromRoute] string academicYear, [FromRoute] int semester,
-        [FromQuery] DateOnly paymentDate, [FromQuery] int amountPaid, TuitionDbContext db, ILogger logger) =>
+        [FromBody] CreateOrUpdatePaymentRequest request, TuitionDbContext db, ILogger<Program> logger) =>
     {
-        var money = new Money(amountPaid);
-        var semesterRequest = new Semester(semester);
-        var academicYearRequest = new AcademicYearCode(academicYear);
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 
-        var tuition =
-            await db.Tuitions.Include(t => t.TuitionPayments).Where(t =>
-                    t.StudentCode == studentCode && t.AcademicYear == academicYearRequest &&
-                    t.Semester == semesterRequest)
-                .FirstOrDefaultAsync() ??
-            throw new ResourceNotFoundException($"Không tìm thấy học phí: {studentCode} {academicYear} {semester}");
-
-        var payment = tuition.TuitionPayments.FirstOrDefault(t => t.PaymentDate == paymentDate);
-
-        if (payment is null)
+        try
         {
-            var totalPaid = tuition.TuitionPayments.Sum(t => t.AmountPaid);
+            var money = new Money(request.Money);
+            var paymentDate = DateOnly.TryParseExact(request.PaymentDate, "dd/MM/yyyy", out var parsedDate)
+                ? parsedDate
+                : throw new BadInputException("Ngày thanh toán không hợp lệ, vui lòng sử dụng định dạng dd/MM/yyyy");
+            var semesterRequest = new Semester(semester).Value;
+            var academicYearRequest = new AcademicYearCode(academicYear).Value;
 
-            if (totalPaid + money.Value > tuition.TuitionFee)
+            // Reload entity để tránh concurrency issues
+            var tuition = await db.Tuitions
+                              .Include(t => t.TuitionPayments)
+                              .Where(t => t.StudentCode == studentCode &&
+                                          t.AcademicYear == academicYearRequest &&
+                                          t.Semester == semesterRequest)
+                              .FirstOrDefaultAsync() ??
+                          throw new ResourceNotFoundException(
+                              $"Không tìm thấy học phí: {studentCode} {academicYear} {semester}");
+
+            var existingPayment = await db.TuitionPayments
+                .Where(p => p.StudentCode == studentCode &&
+                            p.AcademicYear == academicYear &&
+                            p.Semester == semesterRequest &&
+                            p.PaymentDate == paymentDate)
+                .FirstOrDefaultAsync();
+
+            if (existingPayment is null)
             {
-                throw new BadInputException("Số tiền thanh toán vượt quá số tiền học phí");
+                // Kiểm tra tổng số tiền thanh toán
+                var totalPaid = await db.TuitionPayments
+                    .Where(p => p.StudentCode == studentCode &&
+                                p.AcademicYear == academicYear &&
+                                p.Semester == semesterRequest)
+                    .SumAsync(p => p.AmountPaid);
+
+                if (totalPaid + money.Value > tuition.TuitionFee)
+                {
+                    throw new BadInputException("Số tiền thanh toán vượt quá số tiền học phí");
+                }
+
+                var newPayment = new TuitionPayment
+                {
+                    StudentCode = studentCode,
+                    AcademicYear = academicYear,
+                    Semester = semesterRequest,
+                    PaymentDate = paymentDate,
+                    AmountPaid = money.Value
+                };
+
+                await db.TuitionPayments.AddAsync(newPayment);
+            }
+            else
+            {
+                // Cập nhật trực tiếp trong database để tránh tracking issues
+                await db.TuitionPayments
+                    .Where(p => p.StudentCode == studentCode &&
+                                p.AcademicYear == academicYear &&
+                                p.Semester == semesterRequest &&
+                                p.PaymentDate == paymentDate)
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(p => p.AmountPaid, money.Value));
             }
 
-            var newPayment = new TuitionPayment
-            {
-                StudentCode = studentCode,
-                AcademicYear = academicYear,
-                Semester = semesterRequest,
-                PaymentDate = paymentDate,
-                AmountPaid = money.Value
-            };
-
-            tuition.TuitionPayments.Add(newPayment);
-
             await db.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return Results.Ok();
         }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }).WithName("CreateOrUpdateTuitionPayment")
+    .WithTags("Tuition")
+    .Produces(StatusCodes.Status200OK)
+    .WithDescription("Thanh toán học phí của sinh viên");
 
-        payment.AmountPaid = money.Value;
+group.MapPost("/students/{studentCode}/tuitions/{academicYear}/{semester}/payments", async (
+        [FromRoute] string studentCode, [FromRoute] string academicYear, [FromRoute] int semester,
+        [FromBody] CreateOrUpdatePaymentRequest request, TuitionDbContext db, ILogger<Program> logger) =>
+    {
+        var money = new Money(request.Money);
+        var paymentDate = DateOnly.TryParseExact(request.PaymentDate, "dd/MM/yyyy", out var parsedDate)
+            ? parsedDate
+            : throw new BadInputException("Ngày thanh toán không hợp lệ, vui lòng sử dụng định dạng dd/MM/yyyy");
+        var semesterRequest = new Semester(semester);
+        var academicYearRequest = new AcademicYearCode(academicYear);
+
+        var payment = new TuitionPayment
+        {
+            StudentCode = new StudentCode(studentCode).Value,
+            AcademicYear = academicYearRequest.Value,
+            Semester = semesterRequest.Value,
+            PaymentDate = paymentDate,
+            AmountPaid = money.Value
+        };
+
+        await db.TuitionPayments.AddAsync(payment);
 
         await db.SaveChangesAsync();
 
@@ -294,20 +406,30 @@ group.MapPut("/students/{studentCode}/tuitions/{academicYear}/{semester}/payment
     }).WithName("CreateTuitionPayment")
     .WithTags("Tuition")
     .Produces(StatusCodes.Status200OK)
+    .Accepts<CreateOrUpdatePaymentRequest>("application/json")
     .WithDescription("Thanh toán học phí của sinh viên");
 
 group.MapDelete("/students/{studentCode}/tuitions/{academicYear}/{semester}/payments",
         async ([FromRoute] string studentCode, [FromBody] List<DeleteTuitionPaymentRequest> request,
-            TuitionDbContext db, ILogger logger) =>
+            TuitionDbContext db, ILogger<Program> logger) =>
         {
-            var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
-            var tuitions = await db.TuitionPayments.Where(t => t.StudentCode == studentCode && request.Any(r =>
-                    r.AcademicYear == t.AcademicYear && r.Semester == t.Semester && r.PaymentDate == t.PaymentDate))
+            await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            var academicYears = request.Select(r => ((AcademicYearCode)r.AcademicYear).Value).ToList();
+            var semesters = request.Select(r => new Semester(r.Semester).Value).ToList();
+            var paymentDates = request.Select(r =>
+                DateOnly.TryParseExact(r.PaymentDate, "dd/MM/yyyy", out var parsedDate)
+                    ? parsedDate
+                    : throw new BadInputException(
+                        "Ngày thanh toán không hợp lệ, vui lòng sử dụng định dạng dd/MM/yyyy")).ToList();
+            var payments = await db.TuitionPayments.Where(p => p.StudentCode == studentCode &&
+                                                               academicYears.Contains(p.AcademicYear) &&
+                                                               semesters.Contains(p.Semester) &&
+                                                               paymentDates.Contains(p.PaymentDate))
                 .ExecuteDeleteAsync();
 
             await transaction.CommitAsync();
 
-            return Results.Ok(tuitions);
+            return Results.Ok(payments);
         }).WithName("DeleteTuitionPayment")
     .WithTags("Tuition")
     .Produces(StatusCodes.Status200OK)
@@ -315,7 +437,7 @@ group.MapDelete("/students/{studentCode}/tuitions/{academicYear}/{semester}/paym
     .WithDescription("Xóa học phí của sinh viên");
 
 group.MapGet("/tuitions/export", async ([FromQuery] string classCode, [FromQuery] string facultyCode,
-        [FromQuery] string academicYear, [FromQuery] int semester, TuitionDbContext db, ILogger logger,
+        [FromQuery] string academicYear, [FromQuery] int semester, TuitionDbContext db, ILogger<Program> logger,
         IWritingToFile<ExportStudentTuitionIoRecord> writer) =>
     {
         // Tối ưu truy vấn: sử dụng projection với LEFT JOIN thay vì Include/ThenInclude
@@ -369,3 +491,5 @@ group.MapGet("/tuitions/export", async ([FromQuery] string classCode, [FromQuery
     .WithTags("Tuition")
     .Produces(StatusCodes.Status200OK)
     .WithDescription("Xuất học phí của sinh viên");
+
+app.Run();

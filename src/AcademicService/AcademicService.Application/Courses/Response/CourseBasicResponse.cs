@@ -7,5 +7,4 @@ public class CourseBasicResponse
     public uint LectureCredit { get; set; }
 
     public uint LabCredit { get; set; }
-    // Có thể thêm FacultyBasicResponse nếu CourseEf có liên kết đến Faculty
 }

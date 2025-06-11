@@ -11,9 +11,9 @@ using Shared.FileHelper;
 
 namespace FacultyService.Application.Students.CommandHandler;
 
-public class CreteStudentsCommandHandler(
+public class CreateStudentsCommandHandler(
     FacultyDbContext context,
-    ILogger logger,
+    ILogger<CreateStudentsCommandHandler> logger,
     IReadWriteFileFactory<StudentRecord> provider,
     IStudentIdGenerator studentIdGenerator) : IRequestHandler<CreateStudentsCommand, int>
 {

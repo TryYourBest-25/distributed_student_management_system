@@ -8,7 +8,7 @@ using Shared.Exception;
 
 namespace FacultyService.Application.Registrations.CommandHandler;
 
-public class UpdateScoreCommandHandler(FacultyDbContext dbContext, ILogger logger)
+public class UpdateScoreCommandHandler(FacultyDbContext dbContext, ILogger<UpdateScoreCommandHandler> logger)
     : IRequestHandler<UpdateScoreCommand, StudentCode>
 {
     public async Task<StudentCode> Handle(UpdateScoreCommand request, CancellationToken cancellationToken)

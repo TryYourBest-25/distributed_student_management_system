@@ -5,7 +5,6 @@ using Shared.Domain.ValueObject;
 namespace FacultyService.Application.Students.Command;
 
 public record CreateStudentCommand(
-    StudentCode? StudentCode,
     LastName LastName,
     FirstName FirstName,
     ClassCode ClassCode,

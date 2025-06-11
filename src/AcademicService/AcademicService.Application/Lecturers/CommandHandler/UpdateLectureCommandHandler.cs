@@ -9,42 +9,47 @@ using Microsoft.Extensions.Logging;
 
 namespace AcademicService.Application.Lecturers.CommandHandler;
 
-public class UpdateLectureCommandHandler(AcademicDbContext dbContext, ILogger logger)
+public class UpdateLectureCommandHandler(AcademicDbContext dbContext, ILogger<UpdateLectureCommandHandler> logger)
     : IRequestHandler<UpdateLectureCommand, LecturerCode>
 {
     public async Task<LecturerCode> Handle(UpdateLectureCommand request, CancellationToken cancellationToken)
     {
-        var lecture = await dbContext.Lecturers.Where(l => l.LecturerCode == request.LecturerCode.Value)
-                          .FirstOrDefaultAsync(cancellationToken)
-                      ?? throw new ResourceNotFoundException($"Giảng viên với mã {request.LecturerCode} không tồn tại");
-
-        lecture.AcademicRank = request.AcademicRank;
-        lecture.Degree = request.Degree;
-        lecture.FirstName = request.FirstName;
-        lecture.LastName = request.LastName;
-        lecture.Specialization = request.Specialization;
-        lecture.FacultyCode = request.FacultyCode;
-
+        logger.LogInformation("Updating lecturer {LecturerCode} with name {FirstName} {LastName}", request.LecturerCode,
+            request.FirstName, request.LastName);
         try
         {
-            dbContext.Lecturers.Update(lecture);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return request.LecturerCode;
+            var result = await dbContext.Lecturers.Where(l => l.LecturerCode == request.OldLecturerCode.Value)
+                .ExecuteUpdateAsync(l => l.SetProperty(l => l.LecturerCode, request.LecturerCode.Value)
+                    .SetProperty(l => l.FirstName, request.FirstName.Value)
+                    .SetProperty(l => l.LastName, request.LastName.Value)
+                    .SetProperty(l => l.Degree, request.Degree)
+                    .SetProperty(l => l.AcademicRank, request.AcademicRank)
+                    .SetProperty(l => l.Specialization, request.Specialization)
+                    .SetProperty(l => l.FacultyCode, request.FacultyCode.Value), cancellationToken);
+
+            return result > 0
+                ? request.LecturerCode
+                : throw new ResourceNotFoundException($"Giảng viên với mã {request.LecturerCode} không tồn tại");
         }
         catch (UniqueConstraintException ex)
         {
-            if (ex.Message.Contains("lecturer_code"))
+            if (ex.InnerException?.Message.Contains("pk") ?? false)
             {
-                throw new DuplicateException($"Mã giảng viên đã tồn tại");
+                throw new DuplicateException($"Mã giảng viên {request.LecturerCode} đã tồn tại");
             }
 
-            if (ex.Message.Contains("lecturer_name"))
+            if (ex.InnerException?.Message.Contains("uq") ?? false)
             {
-                throw new DuplicateException($"Tên giảng viên đã tồn tại");
+                throw new DuplicateException($"Tên giảng viên {request.FirstName} {request.LastName} đã tồn tại");
             }
 
             logger.LogError(ex, "Lỗi khi cập nhật giảng viên {LecturerCode}", request.LecturerCode);
-            throw new BadInputException("Không thể cập nhật giảng viên");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Lỗi khi cập nhật giảng viên {LecturerCode}", request.LecturerCode);
+            throw;
         }
     }
 }

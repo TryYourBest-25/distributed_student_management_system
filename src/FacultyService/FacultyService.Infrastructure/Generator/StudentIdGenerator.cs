@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using FacultyService.Application;
 using FacultyService.Domain.Generator;
 using FacultyService.Domain.ValueObject;
+using Microsoft.EntityFrameworkCore;
 using Shared.Domain.ValueObject;
 
 
@@ -9,13 +10,13 @@ namespace FacultyItService.Infrastructure.Generator;
 
 public class StudentIdGenerator(FacultyDbContext facultyDbContext) : IStudentIdGenerator
 {
-    public StudentCode Generate(ClassCode classCode)
+    public async ValueTask<StudentCode> Generate(ClassCode classCode)
     {
-        var lastStudentCode = facultyDbContext.Students
+        var lastStudentCode = await facultyDbContext.Students
             .Where(s => s.ClassCode == classCode.Value)
             .OrderByDescending(s => s.StudentCode)
             .Select(s => new StudentCode(s.StudentCode).Increment())
-            .FirstOrDefault() ?? StudentCode.Of(classCode.AcademicYear, 1);
+            .FirstOrDefaultAsync() ?? StudentCode.Of(classCode, 1);
 
         return lastStudentCode;
     }

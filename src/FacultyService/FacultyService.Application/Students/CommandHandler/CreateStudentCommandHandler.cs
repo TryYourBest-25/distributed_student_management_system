@@ -1,6 +1,7 @@
 using System.Data;
 using EntityFramework.Exceptions.Common;
 using FacultyService.Application.Students.Command;
+using FacultyService.Application.Students.Notification;
 using FacultyService.Domain.Entity;
 using FacultyService.Domain.Generator;
 using MediatR;
@@ -14,7 +15,8 @@ namespace FacultyService.Application.Students.CommandHandler;
 public class CreateStudentCommandHandler(
     FacultyDbContext facultyDbContext,
     IStudentIdGenerator studentIdGenerator,
-    ILogger logger)
+    ILogger<CreateStudentCommandHandler> logger,
+    IPublisher publisher)
     : IRequestHandler<CreateStudentCommand, StudentCode>
 {
     public async Task<StudentCode> Handle(CreateStudentCommand request, CancellationToken cancellationToken)
@@ -28,16 +30,15 @@ public class CreateStudentCommandHandler(
                 $"Không tồn tại lớp học ${request.ClassCode.Value} trong khoa ${facultyDbContext.TenantInfo.Name}");
         }
 
-        StudentCode studentCode = null;
-        Student student;
+        StudentCode? studentCode = null;
         var idGenerated = false;
         var retryCount = 0;
         const int maxRetry = 3;
 
         while (!idGenerated && retryCount < maxRetry)
         {
-            studentCode = studentIdGenerator.Generate(request.ClassCode);
-            student = new Student
+            studentCode = await studentIdGenerator.Generate(request.ClassCode);
+            var student = new Student
             {
                 StudentCode = studentCode,
                 FacultyCode = facultyDbContext.TenantInfo.Id,
@@ -46,13 +47,14 @@ public class CreateStudentCommandHandler(
                 ClassCode = request.ClassCode,
                 Address = request.Address,
                 BirthDate = request.BirthDate,
-                IsSuspended = request.IsSuspended,
+                IsSuspended = request.IsSuspended ?? false,
             };
 
             try
             {
                 await facultyDbContext.GlobalStudentCodes.AddAsync(
                     new GlobalStudentCode { StudentCode = studentCode }, cancellationToken);
+
 
                 await facultyDbContext.Students.AddAsync(student, cancellationToken);
 
@@ -102,7 +104,12 @@ public class CreateStudentCommandHandler(
             }
         }
 
-        if (idGenerated) return studentCode;
+        if (idGenerated)
+        {
+            await publisher.Publish(new CreateStudentEvent(studentCode), cancellationToken);
+            return studentCode;
+        }
+
         await transaction.RollbackAsync(cancellationToken);
         throw new BusinessException($"Hệ thống không thể tạo mã sinh viên, vui lòng thử lại");
     }

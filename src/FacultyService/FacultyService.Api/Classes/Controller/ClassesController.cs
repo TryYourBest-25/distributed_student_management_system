@@ -11,7 +11,7 @@ using Shared.Domain.ValueObject;
 namespace FacultyService.Api.Classes.Controller;
 
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/{facultyCode:facultyCode}/[controller]")]
 [ApiController]
 public partial class ClassesController : ControllerBase
 {
@@ -23,21 +23,24 @@ public partial class ClassesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllClasses(GridifyQuery gridifyQuery, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAllClasses([FromQuery] GridifyQuery gridifyQuery,
+        CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new DefaultClassQuery(gridifyQuery), cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetClassById(string id, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetClassById([FromRoute] string id, [FromQuery] GridifyQuery gridifyQuery,
+        CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ClassByIdQuery(id), cancellationToken);
+        var result = await _mediator.Send(new ClassByIdQuery(new ClassCode(id), gridifyQuery), cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateClass(ClassBasicRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateClass([FromBody] ClassBasicRequest request,
+        CancellationToken cancellationToken)
     {
         var command = new CreateClassCommand(
             request.ClassName,
@@ -45,15 +48,7 @@ public partial class ClassesController : ControllerBase
             request.AcademicYearCode
         );
         var result = await _mediator.Send(command, cancellationToken);
-        return Ok(result);
-    }
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateClass(string id, ClassBasicRequest request,
-        CancellationToken cancellationToken)
-    {
-        // TODO: Cần cân nhắc có nên cập nhật lớp
-        return Ok();
+        return CreatedAtAction(nameof(GetClassById), new { id = result }, result);
     }
 
     [HttpDelete("{id}")]
@@ -64,8 +59,8 @@ public partial class ClassesController : ControllerBase
         return Ok(result);
     }
 
-    [HttpDelete("ids")]
-    public async Task<IActionResult> DeleteClassByIds(IList<string> ids, CancellationToken cancellationToken)
+    [HttpDelete("bulk")]
+    public async Task<IActionResult> DeleteClassByIds([FromBody] List<string> ids, CancellationToken cancellationToken)
     {
         var command = new DeleteClassByIdsCommand([.. ids.Select(id => new ClassCode(id))]);
         var result = await _mediator.Send(command, cancellationToken);

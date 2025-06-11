@@ -14,7 +14,7 @@ public record LastName
         if (value.Length > 50)
             throw new BadInputException("Họ không được dài quá 50 ký tự");
 
-        Value = value.Trim();
+        Value = value.Trim().ToUpper();
     }
 
     public static implicit operator string(LastName lastName) => lastName.Value;

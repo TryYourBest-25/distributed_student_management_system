@@ -6,7 +6,7 @@ namespace FacultyService.Application.CreditClasses.Command;
 
 public record UpdateCreditClassCommand(
     int Id,
-    ClassName ClassName,
+    LecturerCode LecturerCode,
     CourseCode CourseCode,
     GroupNumber GroupNumber,
     Semester Semester,

@@ -8,7 +8,9 @@ using Shared.Exception;
 
 namespace FacultyService.Application.CreditClasses.CommandHandler;
 
-public class UpdateCreditClassCommandHandler(FacultyDbContext dbContext, ILogger logger)
+public class UpdateCreditClassCommandHandler(
+    FacultyDbContext dbContext,
+    ILogger<UpdateCreditClassCommandHandler> logger)
     : IRequestHandler<UpdateCreditClassCommand, int>
 {
     public async Task<int> Handle(UpdateCreditClassCommand request, CancellationToken cancellationToken)
@@ -18,23 +20,25 @@ public class UpdateCreditClassCommandHandler(FacultyDbContext dbContext, ILogger
                          .FirstOrDefaultAsync(cancellationToken) ??
                      throw new ResourceNotFoundException($"Không tìm thấy lớp tín chỉ");
 
-        credit.GroupNumber = request.GroupNumber;
+        credit.GroupNumber = request.GroupNumber.Value;
         credit.MinStudent = (short)request.MinStudent;
-        credit.AcademicYear = request.AcademicYearCode;
+        credit.AcademicYear = request.AcademicYearCode.Value;
         credit.IsCancelled = request.IsCancelled;
-        credit.Semester = request.Semester;
-        credit.CourseCode = request.CourseCode;
+        credit.Semester = request.Semester.Value;
+        credit.CourseCode = request.CourseCode.Value;
+        credit.LecturerCode = request.LecturerCode.Value;
+
 
         try
         {
             dbContext.CreditClasses.Update(credit);
             await dbContext.SaveChangesAsync(cancellationToken);
-            return credit.CreditClassId;
+            return request.Id;
         }
         catch (UniqueConstraintException e)
         {
             logger.LogError(e, "Lỗi khi cập nhật lớp học");
-            if (e.Message.Contains("PRIMARY"))
+            if (e.InnerException?.Message.Contains("pk") ?? false)
             {
                 throw new DuplicateException(
                     $"Lớp học với nhóm {request.GroupNumber} mã môn {request.CourseCode} trong học kỳ {request.Semester} niên khóa {request.AcademicYearCode} đã tồn tại",

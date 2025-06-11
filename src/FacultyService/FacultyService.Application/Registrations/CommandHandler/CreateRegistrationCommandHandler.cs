@@ -7,7 +7,9 @@ using Shared.Exception;
 
 namespace FacultyService.Application.Registrations.CommandHandler;
 
-public class CreateRegistrationCommandHandler(FacultyDbContext dbContext, ILogger logger)
+public class CreateRegistrationCommandHandler(
+    FacultyDbContext dbContext,
+    ILogger<CreateRegistrationCommandHandler> logger)
     : IRequestHandler<CreateRegistrationCommand, int>
 {
     public async Task<int> Handle(CreateRegistrationCommand request, CancellationToken cancellationToken)

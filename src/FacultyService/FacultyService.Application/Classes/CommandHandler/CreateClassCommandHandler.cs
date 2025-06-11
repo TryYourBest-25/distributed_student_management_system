@@ -10,12 +10,12 @@ using Shared.Exception;
 
 namespace FacultyService.Application.Classes.CommandHandler;
 
-public class CreateClassCommandHandler(FacultyDbContext facultyDbContext, ILogger logger)
+public class CreateClassCommandHandler(FacultyDbContext facultyDbContext, ILogger<CreateClassCommandHandler> logger)
     : IRequestHandler<CreateClassCommand, ClassCode>
 {
     public async Task<ClassCode> Handle(CreateClassCommand request, CancellationToken cancellationToken)
     {
-        var newClass = new Domain.Entity.Class
+        var newClass = new Class
         {
             ClassCode = request.ClassCode,
             ClassName = request.ClassName,
@@ -44,14 +44,14 @@ public class CreateClassCommandHandler(FacultyDbContext facultyDbContext, ILogge
         }
         catch (UniqueConstraintException e)
         {
-            if (e.Message.Contains("class_code"))
+            if (e.InnerException?.Message.Contains("pk") ?? false)
             {
                 logger.LogError("{Message}", e.Message);
                 await transaction.RollbackAsync(cancellationToken);
                 throw new DuplicateException($"Mã lớp học {request.ClassCode} đã tồn tại");
             }
 
-            if (e.Message.Contains("class_name"))
+            if (e.InnerException?.Message.Contains("class_name") ?? false)
             {
                 logger.LogError("{Message}", e.Message);
                 await transaction.RollbackAsync(cancellationToken);

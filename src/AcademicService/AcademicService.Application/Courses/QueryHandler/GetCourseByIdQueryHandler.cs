@@ -13,7 +13,7 @@ public class GetCourseByIdQueryHandler(AcademicDbContext context)
     {
         var course = await context.Courses
             .AsNoTracking()
-            .Where(c => c.CourseCode == request.CourseCode)
+            .Where(c => c.CourseCode == request.CourseCode.Value)
             .Select(c => new CourseBasicResponse
             {
                 CourseCode = c.CourseCode,

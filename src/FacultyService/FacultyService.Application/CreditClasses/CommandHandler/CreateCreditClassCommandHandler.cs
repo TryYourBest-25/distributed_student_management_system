@@ -7,7 +7,9 @@ using Shared.Exception;
 
 namespace FacultyService.Application.CreditClasses.CommandHandler;
 
-public class CreateCreditClassCommandHandler(FacultyDbContext dbContext, ILogger logger)
+public class CreateCreditClassCommandHandler(
+    FacultyDbContext dbContext,
+    ILogger<CreateCreditClassCommandHandler> logger)
     : IRequestHandler<CreateCreditClassCommand, int>
 {
     public async Task<int> Handle(CreateCreditClassCommand request, CancellationToken cancellationToken)
@@ -18,9 +20,10 @@ public class CreateCreditClassCommandHandler(FacultyDbContext dbContext, ILogger
             MinStudent = (short)request.MinStudent,
             AcademicYear = request.AcademicYearCode,
             FacultyCode = dbContext.TenantInfo.Id,
-            Semester = 1,
+            Semester = request.Semester,
             CourseCode = request.CourseCode,
             IsCancelled = false,
+            LecturerCode = request.LecturerCode,
         };
 
         try
@@ -33,7 +36,7 @@ public class CreateCreditClassCommandHandler(FacultyDbContext dbContext, ILogger
         catch (UniqueConstraintException e)
         {
             logger.LogError(e, "Lỗi khi thêm lớp học mới");
-            if (e.Message.Contains("PRIMARY"))
+            if (e.InnerException?.Message.Contains("pk") ?? false)
             {
                 throw new DuplicateException(
                     $"Lớp học với nhóm {request.GroupNumber} mã môn {request.CourseCode} trong học kỳ {1} niên khóa {request.AcademicYearCode} đã tồn tại",

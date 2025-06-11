@@ -2,21 +2,34 @@ using Shared.Exception;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using FacultyService.Application;
-using FacultyService.Domain.Aggregate;
 using Finbuckle.MultiTenant;
 using MediatR;
 using Serilog;
 using Shared.Logging;
 using Asp.Versioning;
+using FacultyItService.Infrastructure;
+using FacultyItService.Infrastructure.FactoryHelper;
+using FacultyService.Api;
+using FacultyService.Domain;
+using Finbuckle.MultiTenant.Abstractions;
+using FacultyService.Domain.Port;
+using FacultyItService.Infrastructure.Generator;
+using FacultyItService.Infrastructure.Port;
+using FacultyService.Domain.Generator;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
     .ConfigureContainer<ContainerBuilder>(cf =>
     {
-        cf.RegisterModule(new ApplicationModule());
+        cf.RegisterModule(new MediatRModule(typeof(Program).Assembly,
+            typeof(FacultyDbContext).Assembly));
         cf.RegisterGeneric(typeof(MediatRLoggingBehavior<,>)).As(typeof(IPipelineBehavior<,>))
             .InstancePerLifetimeScope();
+        cf.RegisterType<StudentPort>().As<IStudentPort>().InstancePerLifetimeScope();
+        cf.RegisterType<StudentIdGenerator>().As<IStudentIdGenerator>().InstancePerLifetimeScope();
+        cf.RegisterType<StudentAccountPort>().As<IStudentAccountPort>().InstancePerLifetimeScope();
+        cf.RegisterType<KeycloakClientFactory>();
     }).UseSerilog((context, provider, configuration) =>
     {
         configuration.ReadFrom.Configuration(context.Configuration);
@@ -26,6 +39,7 @@ builder.Services.Configure<RouteOptions>(options =>
     {
         options.LowercaseUrls = true;
         options.LowercaseQueryStrings = true;
+        options.ConstraintMap.Add("facultyCode", typeof(FacultyConstraint));
     }).AddProblemDetails()
     .AddExceptionHandler<ExceptionHandler>()
     .AddOpenApiDocument()
@@ -33,12 +47,11 @@ builder.Services.Configure<RouteOptions>(options =>
     .AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.SnakeCaseLower;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 builder.Services.AddMultiTenant<AppTenantInfo>()
-    .WithConfigurationStore()
-    .WithStaticStrategy(builder.Configuration["Tenants:Default"] ??
-                        throw new InvalidOperationException("Tenant is missing."));
+    .WithStaticStrategy(builder.Configuration["Tenant"] ??
+                        throw new InvalidOperationException("Tenant is missing.")).WithConfigurationStore();
 
 builder.Configuration.SetBasePath(AppContext.BaseDirectory)
     .AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true)
@@ -50,7 +63,17 @@ builder.Configuration.SetBasePath(AppContext.BaseDirectory)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables()
     .AddUserSecrets<Program>();
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
+builder.Services.AddHttpClient();
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -92,13 +115,18 @@ if (app.Environment.IsDevelopment())
     Serilog.Debugging.SelfLog.Enable(Console.Error);
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseExceptionHandler();
 
 app.UseMultiTenant();
 
 app.MapControllers();
+
+app.UseCors();
 
 
 app.Run();

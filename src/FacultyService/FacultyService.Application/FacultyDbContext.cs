@@ -1,5 +1,5 @@
 ﻿using EntityFramework.Exceptions.PostgreSQL;
-using FacultyService.Domain.Aggregate;
+using FacultyService.Domain;
 using FacultyService.Domain.Entity;
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.EntityFrameworkCore;
@@ -56,7 +56,6 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
             optionsBuilder.UseExceptionProcessor()
                 .UseNpgsql(_configuration["ConnectionStrings:DefaultConnection"] ??
                            throw new InvalidOperationException("Connection string is null"))
-                .EnableSensitiveDataLogging()
                 .EnableDetailedErrors();
         }
     }
@@ -401,10 +400,6 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
                 .HasForeignKey(d => new { d.FacultyCode, d.ClassCode })
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_student_class");
-
-            entity.HasMany(d => d.Registrations).WithOne().HasForeignKey(d => new { d.FacultyCode, d.StudentCode })
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_student_registration");
         });
 
         OnModelCreatingPartial(modelBuilder);

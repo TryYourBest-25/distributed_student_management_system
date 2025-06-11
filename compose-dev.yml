@@ -1,9 +1,174 @@
-version: '3.8'
+networks:
+  dsms_network:
+    driver: bridge
+
+volumes:
+  coordinator0_data:
+  worker0_data:
+  worker1_data:
+  healthcheck-coor0:
+  es-data:
+  keycloak_db_data:
+  accounting_db_data:
+  kafka0_data:
 
 services:
+  coordinator0:
+    image: citusdata/citus:13.0-pg16
+    env_file:
+      - .env.dev
+    environment:
+      - EXPECTED_WORKERS=2
+      - POSTGRES_DB=${POSTGRES_COORDINATOR_0_DB:-dsmsdb}
+      - POSTGRES_USER=${POSTGRES_COORDINATOR_0_USER:-coor}
+      - POSTGRES_PASSWORD=${POSTGRES_COORDINATOR_0_PASSWORD:-coor}
+      - PGPORT=${POSTGRES_COORDINATOR_0_PGPORT:-5432}
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    container_name: coordinator0
+    hostname: ${COORDINATOR_0_HOST_NAME:-coordinator0}
+    volumes:
+      - coordinator0_data:/var/lib/postgresql/data
+      - ./database/coordinator_scripts:/opt/scripts
+      - healthcheck-coor0:/healthcheck
+    labels: [ "com.citusdata.role=Master" ]
+    networks:
+      - dsms_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -q" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ports:
+      - "${COORDINATOR_0_HOST_PORT:-25000}:5432"
+
+  worker0:
+    image: citusdata/citus:13.0-pg16
+    container_name: worker0
+    environment:
+      - POSTGRES_USER=${POSTGRES_COORDINATOR_0_USER:-coor}
+      - POSTGRES_PASSWORD=${POSTGRES_COORDINATOR_0_PASSWORD:-coor}
+      - POSTGRES_DB=${POSTGRES_COORDINATOR_0_DB:-dsmsdb}
+    env_file:
+      - .env.dev
+    volumes:
+      - worker0_data:/var/lib/postgresql/data
+      - ./database/worker_scripts/wait-for-manager.sh:/wait-for-manager.sh
+      - healthcheck-coor0:/healthcheck
+    networks:
+      - dsms_network
+    labels: [ "com.citusdata.role=Worker" ]
+    command: "/wait-for-manager.sh"
+    depends_on:
+      manager0:
+        condition: service_started
+    restart: unless-stopped
+    ports:
+      - ${WORKER_0_HOST_PORT:-25010}:5432
+
+  worker1:
+    image: citusdata/citus:13.0-pg16
+    container_name: worker1
+    environment:
+      - POSTGRES_USER=${POSTGRES_COORDINATOR_0_USER:-coor}
+      - POSTGRES_PASSWORD=${POSTGRES_COORDINATOR_0_PASSWORD:-coor}
+      - POSTGRES_DB=${POSTGRES_COORDINATOR_0_DB:-dsmsdb}
+    env_file:
+      - .env.dev
+    volumes:
+      - worker1_data:/var/lib/postgresql/data
+      - ./database/worker_scripts/wait-for-manager.sh:/wait-for-manager.sh
+      - healthcheck-coor0:/healthcheck
+    networks:
+      - dsms_network
+    labels: [ "com.citusdata.role=Worker" ]
+    command: "/wait-for-manager.sh"
+    depends_on:
+      manager0:
+        condition: service_started
+    restart: unless-stopped
+    ports:
+      - ${WORKER_1_HOST_PORT:-25011}:5432
+
+  manager0:
+    image: citusdata/membership-manager:0.3.0
+    container_name: ${MANAGER_0_HOST_NAME:-manager0}
+    env_file:
+      - .env.dev
+    volumes:
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
+      - healthcheck-coor0:/healthcheck
+    networks:
+      - dsms_network
+    depends_on:
+      coordinator0:
+        condition: service_healthy
+    environment:
+      - CITUS_HOST=${COORDINATOR_0_HOST_NAME:-coordinator0}
+      - POSTGRES_USER=${POSTGRES_COORDINATOR_0_USER:-coor}
+      - POSTGRES_PASSWORD=${POSTGRES_COORDINATOR_0_PASSWORD:-coor}
+      - POSTGRES_DB=${POSTGRES_COORDINATOR_0_DB:-dsmsdb}
+    restart: unless-stopped
+
+  acc-postgres-db:
+    image: postgres:16
+    container_name: ${ACC_POSTGRES_DB_HOST_NAME:-acc-postgres-db}
+    hostname: ${ACC_POSTGRES_DB_HOST_NAME:-acc-postgres-db}
+    env_file:
+      - .env.dev
+    volumes:
+      - accounting_db_data:/var/lib/postgresql/data
+      - ./database/accounting_scripts/03_accounting_local_tables.sql:/docker-entrypoint-initdb.d/03_accounting_local_tables.sql
+    environment:
+      POSTGRES_USER: ${POSTGRES_ACC_DB_USER:-acc_user}
+      POSTGRES_PASSWORD: ${POSTGRES_ACC_DB_PASSWORD:-acc_user}
+      POSTGRES_DB: ${POSTGRES_ACC_DB_DB:-acc_db}
+      POSTGRES_INIT_DB_ARGS: --wal-level=logical
+    networks:
+      - dsms_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER:-acc_user} -d $${POSTGRES_DB:-acc_db} -q",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ports:
+      - ${POSTGRES_ACC_DB_HOST_PORT:-25020}:5432
+  
+  
+  
+  proxydb:
+    image: haproxy:3.0
+    container_name: ${PROXYDB_HOST_NAME:-proxydb}
+    hostname: ${PROXYDB_HOST_NAME:-proxydb}
+    env_file:
+      - .env.dev
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "26000:26000"
+      - "${PROXYDB_HOST_PORT_2:-26001}:8404"
+    volumes:
+      - ./database/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      - dsms_network
+    depends_on:
+      - coordinator0
+      - worker0
+      - worker1
+    restart: unless-stopped
+
   elasticsearch:
     image: elasticsearch:8.18.0
-    container_name: elasticsearch
+    container_name: ${ELASTICSEARCH_HOST_NAME:-elasticsearch}
+    hostname: ${ELASTICSEARCH_HOST_NAME:-elasticsearch}
+    env_file:
+      - .env.dev
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -11,8 +176,8 @@ services:
     volumes:
       - es-data:/usr/share/elasticsearch/data
     ports:
-      - "18523:9200"
-      - "18524:9300"
+      - "${ELASTICSEARCH_HOST_PORT_1:-25300}:9200"
+      - "${ELASTICSEARCH_HOST_PORT_2:-25301}:9300"
     ulimits:
       memlock:
         soft: -1
@@ -21,31 +186,218 @@ services:
         soft: 65536
         hard: 65536
     networks:
-      - es-net
+      - dsms_network
 
   kibana:
     image: kibana:8.18.0
-    container_name: kibana
+    container_name: ${KIBANA_HOST_NAME:-kibana}
+    hostname: ${KIBANA_HOST_NAME:-kibana}
+    env_file:
+      - .env.dev
     environment:
       ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
     ports:
-      - "5601:5601"
+      - ${KIBANA_HOST_PORT:-25310}:5601
     depends_on:
       - elasticsearch
     healthcheck:
-      test: ["CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
+        ]
       interval: 10s
       timeout: 10s
       retries: 5
     networks:
-        - es-net
+      - dsms_network
 
-volumes:
-  es-data:
-  
-networks:
-  es-net:
-    driver: bridge
+  keycloak-postgres-db:
+    image: postgres:16
+    container_name: ${KEYCLOAK_DB_HOST_NAME:-keycloak-postgres-db}
+    hostname: ${KEYCLOAK_DB_HOST_NAME:-keycloak-postgres-db}
+    env_file:
+      - .env.dev
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_KEYCLOAK_DB_PASSWORD:-user}
+      POSTGRES_DB: ${POSTGRES_KEYCLOAK_DB:-keycloak_db}
+      POSTGRES_USER: ${POSTGRES_KEYCLOAK_DB_USER:-user}
+    networks:
+      - dsms_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_KEYCLOAK_DB_USER:-user} -d ${POSTGRES_KEYCLOAK_DB:-keycloak_db} -q",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    ports:
+      - ${KEYCLOAK_DB_HOST_PORT:-25030}:5432
 
-# Để khởi động phần database, hãy chạy:
-# docker-compose -f database/compose-dev.yml up -d 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: ${KEYCLOAK_HOST_NAME:-keycloak}
+    hostname: ${KEYCLOAK_HOST_NAME:-keycloak}
+    env_file:
+      - .env.dev
+    command: start-dev --import-realm
+    volumes:
+      - ./realm-config.json:/opt/keycloak/data/import/realm-config.json
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: ${KEYCLOAK_DB_URL:-jdbc:postgresql://keycloak-postgres-db:5432/keycloak_db}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-user}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-user}
+      KC_DB_SCHEMA: public
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY: "edge"
+    ports:
+      - "${KEYCLOAK_HOST_PORT:-25352}:8080"
+    networks:
+      - dsms_network
+    depends_on:
+      keycloak-postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kafka0:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka0
+    ports:
+      - ${KAFKA0_HOST_PORT:-24000}:19092
+      - ${KAFKA0_HOST_PORT:-24001}:9092
+    volumes:
+      - kafka0_data:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_KRAFT_MODE: "true"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_LISTENERS: 'INTERNAL://kafka0:29092,CONTROLLER://kafka0:29093,EXTERNAL://0.0.0.0:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://kafka0:29092,EXTERNAL://localhost:19092'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka0:29093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data/kraft-combined-logs"
+    networks:
+      - dsms_network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-topics --bootstrap-server kafka0:29092 --list || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  debezium-source:
+    image: quay.io/debezium/connect:3.0.0.Final
+    container_name: debezium-source
+    hostname: debezium-source
+    ports:
+      - ${DEBEZIUM_SOURCE_HOST_PORT:-28083}:8083
+    environment:
+      BOOTSTRAP_SERVERS: "kafka0:29092"
+      GROUP_ID: "debezium-source-connect-group"
+      CONFIG_STORAGE_TOPIC: "_debezium_source_configs"
+      OFFSET_STORAGE_TOPIC: "_debezium_source_offsets"
+      STATUS_STORAGE_TOPIC: "_debezium_source_status"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_ACCESS_CONTROL_ALLOW_ORIGIN: "*"
+      CONNECT_ACCESS_CONTROL_ALLOW_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+      CONNECT_ACCESS_CONTROL_ALLOW_HEADERS: "origin,content-type,accept,authorization"
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+    networks:
+      - dsms_network
+    depends_on:
+      kafka0:
+        condition: service_healthy
+      coordinator0:
+        condition: service_healthy
+      acc-postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  debezium-sink:
+    image: quay.io/debezium/connect:3.0.0.Final
+    container_name: ${DEBEZIUM_SINK_HOST_NAME:-debezium-sink}
+    hostname: ${DEBEZIUM_SINK_HOST_NAME:-debezium-sink}
+    env_file:
+      - .env.dev
+    ports:
+      - ${DEBEZIUM_SINK_HOST_PORT:-25383}:8083
+    environment:
+      BOOTSTRAP_SERVERS: "kafka0:29092"
+      GROUP_ID: "debezium-sink-connect-group"
+      CONFIG_STORAGE_TOPIC: "_debezium_sink_configs"
+      OFFSET_STORAGE_TOPIC: "_debezium_sink_offsets"
+      STATUS_STORAGE_TOPIC: "_debezium_sink_status"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_ACCESS_CONTROL_ALLOW_ORIGIN: "*"
+      CONNECT_ACCESS_CONTROL_ALLOW_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+      CONNECT_ACCESS_CONTROL_ALLOW_HEADERS: "origin,content-type,accept,authorization"
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+    networks:
+      - dsms_network
+    depends_on:
+      kafka0:
+        condition: service_healthy
+      coordinator0:
+        condition: service_healthy
+      acc-postgres-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kafkaui:
+    image: ghcr.io/kafbat/kafka-ui:latest
+    container_name: ${KAFKAUI_HOST_NAME:-kafkaui}
+    hostname: ${KAFKAUI_HOST_NAME:-kafkaui}
+    env_file:
+      - .env.dev
+    ports:
+      - ${KAFKAUI_HOST_PORT:-25700}:8080
+    environment:
+      KAFKA_CLUSTERS_0_NAME: kafka0
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka0:29092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: debezium-source
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://debezium-source:8083
+      KAFKA_CLUSTERS_0_KAFKACONNECT_1_NAME: debezium-sink
+      KAFKA_CLUSTERS_0_KAFKACONNECT_1_ADDRESS: http://debezium-sink:8083
+      DYNAMIC_CONFIG_ENABLED: "true"
+    networks:
+      - dsms_network
+    depends_on:
+      kafka0:
+        condition: service_healthy
+      debezium-source:
+        condition: service_started
+      debezium-sink:
+        condition: service_started
+    restart: unless-stopped
+

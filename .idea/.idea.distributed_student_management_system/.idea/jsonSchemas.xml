@@ -14,6 +14,28 @@
                   <Item>
                     <option name="path" value="src/FalcultyItService/FacultyService.Api/appsettings.json" />
                   </Item>
+                  <Item>
+                    <option name="path" value="src/AcademicService/AcademicService.Api/appsettings.Development.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="src/TuitionService/TuitionService.Api/appsettings.Development.json" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+        <entry key="ocelot">
+          <value>
+            <SchemaInfo>
+              <option name="generatedName" value="New Schema" />
+              <option name="name" value="ocelot" />
+              <option name="relativePathToSchema" value="https://json.schemastore.org/ocelot.json" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="src/ApiGateway/ocelot.json" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>

@@ -13,14 +13,15 @@ public class GetAllClassesQueryHandler(FacultyDbContext dbContext)
         CancellationToken cancellationToken)
     {
         var classes = await dbContext.Classes
-            .ApplyOrdering(request.GridifyQuery)
+            .ApplyOrdering(request.GridifyQuery.OrderBy ?? "ClassCode")
             .Select(c => new ClassBasicResponse
             {
                 ClassCode = c.ClassCode,
                 ClassName = c.ClassName,
                 FacultyCode = c.FacultyCode,
                 StudentCount = c.Students.Count,
-                FacultyName = c.FacultyCodeNavigation.FacultyName
+                FacultyName = c.FacultyCodeNavigation.FacultyName,
+                AcademicYearCode = c.AcademicYearCode
             })
             .ToPagedListAsync(request.GridifyQuery.Page, request.GridifyQuery.PageSize,
                 cancellationToken: cancellationToken);

@@ -30,7 +30,7 @@ public class SearchCreditClassQueryHandler(FacultyDbContext dbContext)
             .ApplyFiltering(request.GridifyQuery, queryMapper)
             .Select(c => new CreditClassBasicResponse
             {
-                Id = c.CreditClassId,
+                CreditClassId = c.CreditClassId,
                 CourseCode = c.CourseCode,
                 GroupNumber = c.GroupNumber,
                 CurrentStudent = c.Registrations.Count,

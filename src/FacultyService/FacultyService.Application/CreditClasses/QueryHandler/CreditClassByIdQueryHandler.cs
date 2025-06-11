@@ -1,8 +1,6 @@
 using FacultyService.Application.CreditClasses.Query;
 using FacultyService.Application.CreditClasses.Response;
-using FacultyService.Application.Students.Response;
 using MediatR;
-using Shared.Domain.ValueObject;
 using Microsoft.EntityFrameworkCore;
 
 namespace FacultyService.Application.CreditClasses.QueryHandler;
@@ -17,7 +15,7 @@ public class CreditClassByIdQueryHandler(FacultyDbContext dbContext)
             .Where(c => c.CreditClassId == request.Id)
             .Select(c => new CreditClassDetailResponse
             {
-                Id = c.CreditClassId,
+                CreditClassId = c.CreditClassId,
                 CourseCode = c.CourseCode,
                 GroupNumber = c.GroupNumber,
                 CurrentStudent = c.Registrations.Count,
@@ -29,18 +27,7 @@ public class CreditClassByIdQueryHandler(FacultyDbContext dbContext)
                 CourseName = c.CourseCodeNavigation.CourseName,
                 LectureCredit = c.CourseCodeNavigation.LectureCredit,
                 LabCredit = c.CourseCodeNavigation.LabCredit,
-                Students = c.Registrations.Select(r => new StudentBasicResponse
-                {
-                    StudentCode = r.StudentCode,
-                    FirstName = r.Student.FirstName,
-                    LastName = r.Student.LastName,
-                    Gender = GenderExtensions.FromBoolean(r.Student.Gender ?? false),
-                    BirthDate = r.Student.BirthDate,
-                    Address = r.Student.Address,
-                    IsSuspended = r.Student.IsSuspended,
-                    ClassCode = r.Student.ClassCode,
-                    FacultyCode = r.Student.FacultyCode,
-                }).ToList(),
+                IsCancelled = c.IsCancelled
             }).FirstOrDefaultAsync(cancellationToken);
 
         return creditClass;

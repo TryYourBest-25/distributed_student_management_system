@@ -26,14 +26,12 @@ public partial class StudentBasicInfo
     /// <summary>
     /// Mã lớp gốc của sinh viên
     /// </summary>
-    public string? ClassCode { get; set; }
+    public string ClassCode { get; set; } = null!;
 
     /// <summary>
     /// Mã khoa gốc của sinh viên
     /// </summary>
-    public string? FacultyCode { get; set; }
-
-    public GlobalStudentCode GlobalStudentCode { get; set; } = null!;
+    public string FacultyCode { get; set; } = null!;
 
     public ICollection<Tuition> Tuitions { get; set; } = new List<Tuition>();
 }

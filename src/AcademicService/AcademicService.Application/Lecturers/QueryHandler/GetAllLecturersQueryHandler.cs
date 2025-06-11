@@ -15,8 +15,7 @@ public class GetAllLecturersQueryHandler(AcademicDbContext context)
         CancellationToken cancellationToken)
     {
         var query = await context.Lecturers
-            .AsNoTracking()
-            .ApplyOrdering(request.GridifyQuery)
+            .ApplyOrdering(request.GridifyQuery.OrderBy ?? "LecturerCode")
             .Select(l => new LecturerResponse
             {
                 LecturerCode = l.LecturerCode,

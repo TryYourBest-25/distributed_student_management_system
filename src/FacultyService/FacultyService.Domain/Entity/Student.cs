@@ -43,18 +43,18 @@ public partial class Student
     /// <summary>
     /// Đã nghỉ học (TRUE: nghỉ, FALSE: còn học)
     /// </summary>
-    public bool? IsSuspended { get; set; }
+    public bool IsSuspended { get; set; }
 
     /// <summary>
     /// Mã khoa của sinh viên (cột phân phối)
     /// </summary>
     public string FacultyCode { get; set; } = null!;
 
-    public  Class Class { get; set; } = null!;
+    public Class Class { get; set; } = null!;
 
-    public  Faculty FacultyCodeNavigation { get; set; } = null!;
+    public Faculty FacultyCodeNavigation { get; set; } = null!;
 
-    public  ICollection<Registration> Registrations { get; set; } = new List<Registration>();
+    public ICollection<Registration> Registrations { get; set; } = new List<Registration>();
 
-    public  GlobalStudentCode StudentCodeNavigation { get; set; } = null!;
+    public GlobalStudentCode StudentCodeNavigation { get; set; } = null!;
 }

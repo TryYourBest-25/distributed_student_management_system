@@ -15,7 +15,7 @@ public class GetAllCoursesQueryHandler(AcademicDbContext context)
         CancellationToken cancellationToken)
     {
         var query = await context.Courses
-            .ApplyOrdering(request.GridifyQuery)
+            .ApplyOrdering(request.GridifyQuery.OrderBy ?? "CourseCode")
             .Select(c => new CourseBasicResponse
             {
                 CourseCode = c.CourseCode,

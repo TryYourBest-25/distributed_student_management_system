@@ -8,22 +8,24 @@ using Shared.Exception;
 
 namespace FacultyService.Application.Registrations.CommandHandler;
 
-public class StudentRegisterCreditClassCommandHandler(FacultyDbContext dbContext, ILogger logger)
+public class StudentRegisterCreditClassCommandHandler(
+    FacultyDbContext dbContext,
+    ILogger<StudentRegisterCreditClassCommandHandler> logger)
     : IRequestHandler<StudentRegisterCreditClassCommand, int>
 {
     public async Task<int> Handle(StudentRegisterCreditClassCommand request, CancellationToken cancellationToken)
     {
         var studentIsSuspended = await dbContext.Students
-            .Where(s => s.StudentCode == request.StudentCode && s.IsSuspended == true)
+            .Where(s => s.StudentCode == request.StudentCode.Value && s.IsSuspended == true)
             .Select(s => s.IsSuspended)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (studentIsSuspended is not null)
+        if (studentIsSuspended)
             throw new BusinessException(
                 $"Sinh viên {request.StudentCode} đã bị đình chỉ học tập, không thể đăng ký lớp tín chỉ");
 
         var existRegistration = await dbContext.Registrations
-            .Where(r => r.CreditClassId == request.CreditClassId && r.StudentCode == request.StudentCode)
+            .Where(r => r.CreditClassId == request.CreditClassId && r.StudentCode == request.StudentCode.Value)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (existRegistration is null)
@@ -31,9 +33,9 @@ public class StudentRegisterCreditClassCommandHandler(FacultyDbContext dbContext
             var registration = new Registration
             {
                 CreditClassId = request.CreditClassId,
-                StudentCode = request.StudentCode,
+                StudentCode = request.StudentCode.Value,
                 FacultyCode = dbContext.TenantInfo.Id,
-                IsCancelled = true
+                IsCancelled = false
             };
 
             try
@@ -46,7 +48,7 @@ public class StudentRegisterCreditClassCommandHandler(FacultyDbContext dbContext
             catch (UniqueConstraintException e)
             {
                 logger.LogError(e, "Lỗi khi thêm lớp học mới");
-                if (e.Message.Contains("PRIMARY"))
+                if (e.InnerException?.Message.Contains("pk") ?? false)
                 {
                     throw new DuplicateException($"Sinh viên {request.StudentCode} đã đăng ký lớp tín chỉ này", e);
                 }
@@ -66,7 +68,7 @@ public class StudentRegisterCreditClassCommandHandler(FacultyDbContext dbContext
         catch (UniqueConstraintException e)
         {
             logger.LogError(e, "Lỗi khi cập nhật lớp học mới");
-            if (e.Message.Contains("PRIMARY"))
+            if (e.InnerException?.Message.Contains("pk") ?? false)
             {
                 throw new DuplicateException($"Sinh viên {request.StudentCode} đã đăng ký lớp tín chỉ này", e);
             }

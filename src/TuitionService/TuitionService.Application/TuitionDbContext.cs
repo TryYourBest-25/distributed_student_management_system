@@ -10,8 +10,6 @@ namespace TuitionService.Domain;
 public partial class TuitionDbContext(DbContextOptions<TuitionDbContext> options, IConfiguration configuration)
     : DbContext(options)
 {
-    public virtual DbSet<GlobalStudentCode> GlobalStudentCodes { get; set; }
-
     public virtual DbSet<StudentBasicInfo> StudentBasicInfos { get; set; }
 
     public virtual DbSet<Tuition> Tuitions { get; set; }
@@ -79,11 +77,6 @@ public partial class TuitionDbContext(DbContextOptions<TuitionDbContext> options
                 .HasMaxLength(50)
                 .HasComment("Họ sinh viên")
                 .HasColumnName("last_name");
-
-            entity.HasOne(d => d.GlobalStudentCode).WithOne()
-                .HasForeignKey<StudentBasicInfo>(d => d.StudentCode)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_student_global_student_code");
         });
 
         modelBuilder.Entity<Tuition>(entity =>

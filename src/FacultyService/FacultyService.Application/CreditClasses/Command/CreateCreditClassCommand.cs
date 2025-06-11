@@ -6,9 +6,10 @@ using Shared.Domain.ValueObject;
 namespace FacultyService.Application.CreditClasses.Command;
 
 public record CreateCreditClassCommand(
-    ClassName ClassName,
+    LecturerCode LecturerCode,
     CourseCode CourseCode,
     GroupNumber GroupNumber,
     ushort MinStudent,
-    AcademicYearCode AcademicYearCode
+    AcademicYearCode AcademicYearCode,
+    Semester Semester
 ) : IRequest<int>;

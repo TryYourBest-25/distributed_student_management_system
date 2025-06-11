@@ -69,7 +69,7 @@ Việc lựa chọn đúng loại bảng cho từng thực thể dữ liệu là
 ```bash
 # Từ thư mục gốc của project (nơi chứa thư mục database)
 cd database
-docker-compose -f compose-dev.yml up -d
+docker-compose -f ../compose-dev.yml up -d
 ```
 
 * Các container `citus_coordinator`,  `citus_worker_1`, `citus_worker_2`, và `workerlist_gen` sẽ khởi động.
@@ -128,9 +128,9 @@ Quy trình này được sử dụng khi `citus_coordinator` (node chính) gặp
 1. **Phát hiện sự cố:** Xác định `citus_coordinator` không hoạt động.
 2. **Chuẩn bị Standby (Restore):**
     * Đảm bảo bạn có bản backup gần nhất (từ `backup.sh`).
-    * **Quan trọng:** Dừng container standby: `docker-compose stop citus_coordinator_standby`.
+    * **Quan trọng:** Dừng container standby: `docker-compose -f ../compose-dev.yml stop citus_coordinator_standby`.
     * (Khuyến nghị cho fresh restore) Xóa dữ liệu cũ trong volume của standby. Tìm đường dẫn volume bằng `docker volume inspect database_coordinator_standby_data` và xóa nội dung của nó (ví dụ: `sudo rm -rf /var/lib/docker/volumes/database_coordinator_standby_data/_data/*`).
-    * Khởi động lại container standby: `docker-compose up -d citus_coordinator_standby`. Nó sẽ tự tạo PGDATA trống.
+    * Khởi động lại container standby: `docker-compose -f ../compose-dev.yml up -d citus_coordinator_standby`. Nó sẽ tự tạo PGDATA trống.
     * Chờ standby khởi động hoàn toàn. Sau đó, chạy script restore:
 
         ```bash
@@ -173,7 +173,7 @@ Quy trình này được sử dụng khi `citus_coordinator` (node chính) gặp
     Hoặc, đơn giản hơn cho môi trường dev (sẽ có downtime ngắn):
 
     ```bash
-    docker-compose restart haproxy_loadbalancer
+    docker-compose -f ../compose-dev.yml restart haproxy_loadbalancer
     ```
 
 6. **Kiểm tra hệ thống:** Ứng dụng của bạn giờ sẽ kết nối đến `citus_coordinator_standby` thông qua HAProxy.

@@ -14,5 +14,6 @@ public record CreditClassDetailResponse : CreditClassBasicResponse
 
     public int LabCredit { get; set; }
 
+
     public IList<StudentBasicResponse> Students { get; set; } = [];
 }

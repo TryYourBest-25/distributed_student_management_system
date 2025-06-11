@@ -5,10 +5,12 @@ using Shared.Domain.ValueObject;
 namespace FacultyService.Application.Students.Command;
 
 public record UpdateStudentCommand(
-    StudentCode StudentCode,
+    StudentCode OldStudentCode,
+    StudentCode? NewStudentCode,
     LastName LastName,
     FirstName FirstName,
     DateOnly? BirthDate,
+    Gender Gender,
     string? Address,
-    bool IsSuspended,
-    Gender Gender) : IRequest<StudentCode>;
+    bool? IsSuspended
+) : IRequest<StudentCode>;

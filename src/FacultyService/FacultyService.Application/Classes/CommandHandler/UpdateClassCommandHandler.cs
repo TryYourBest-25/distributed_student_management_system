@@ -8,7 +8,7 @@ using Shared.Exception;
 
 namespace FacultyService.Application.Classes.CommandHandler;
 
-public class UpdateClassCommandHandler(FacultyDbContext facultyDbContext, ILogger logger)
+public class UpdateClassCommandHandler(FacultyDbContext facultyDbContext, ILogger<UpdateClassCommandHandler> logger)
     : IRequestHandler<UpdateClassCommand, ClassCode>
 {
     public async Task<ClassCode> Handle(UpdateClassCommand request, CancellationToken cancellationToken)

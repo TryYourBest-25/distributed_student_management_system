@@ -32,7 +32,7 @@ public partial record StudentCode
     /// This property is used to get academic year from student code
     /// Example: N23DC01xxx => 23
     /// </summary>
-    public string AcademicYear => Value.Substring(1, 2);
+    public int AcademicYear => int.Parse(Value.Substring(1, 2));
 
 
     /// <summary>

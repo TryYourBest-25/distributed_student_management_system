@@ -1,24 +1,22 @@
+using Arch.EntityFrameworkCore.UnitOfWork.Collections;
 using FacultyService.Application.Students.Query;
 using FacultyService.Application.Students.Response;
+using FacultyService.Domain.Entity;
 using Gridify;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Shared.Domain.ValueObject;
 using Shared.Exception;
 
-// Giả sử StudentEf nằm trong đây
-
 namespace FacultyService.Application.Students.QueryHandler;
 
 public class SearchStudentQueryHandler(FacultyDbContext context)
-    : IRequestHandler<SearchStudentQuery, Paging<StudentBasicResponse>>
+    : IRequestHandler<SearchStudentQuery, IPagedList<StudentBasicResponse>>
 {
-    public async Task<Paging<StudentBasicResponse>> Handle(SearchStudentQuery request,
+    public async Task<IPagedList<StudentBasicResponse>> Handle(SearchStudentQuery request,
         CancellationToken cancellationToken)
     {
-        var mapper = new GridifyMapper<Domain.Entity.Student>()
-            .AddMap("classname", s => s.Class.ClassName) // Ánh xạ tùy chỉnh cho ClassName
-            .GenerateMappings();
+        var mapper = new GridifyMapper<Student>().GenerateMappings();
 
         if (!request.GridifyQuery.IsValid(mapper))
         {
@@ -27,6 +25,7 @@ public class SearchStudentQueryHandler(FacultyDbContext context)
 
         var studentResponses = await context.Students
             .ApplyFiltering(request.GridifyQuery, mapper)
+            .ApplyOrdering(request.GridifyQuery.OrderBy ?? "StudentCode", mapper)
             .Select(s => new StudentBasicResponse
             {
                 StudentCode = s.StudentCode,
@@ -38,8 +37,9 @@ public class SearchStudentQueryHandler(FacultyDbContext context)
                 ClassCode = s.ClassCode,
                 FacultyCode = s.FacultyCode,
                 Gender = GenderExtensions.FromBoolean(s.Gender ?? false),
-            }).ToListAsync(cancellationToken);
+            }).ToPagedListAsync(request.GridifyQuery.Page, request.GridifyQuery.PageSize,
+                cancellationToken: cancellationToken);
 
-        return new Paging<StudentBasicResponse>(studentResponses.Count, studentResponses);
+        return studentResponses;
     }
 }

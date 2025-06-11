@@ -59,4 +59,13 @@ public partial record ClassCode
     }
 
     public override string ToString() => Value;
+
+    public bool IsValid(StudentCode studentCode)
+    {
+        // N22DCCN057
+        // D22CQCN01
+        var studentAcademicYear = studentCode.AcademicYear;
+        var classAcademicYear = int.Parse(AcademicYear);
+        return studentAcademicYear == classAcademicYear && studentCode.ClassCode == MajorCode;
+    }
 }
