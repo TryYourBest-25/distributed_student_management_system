@@ -21,7 +21,7 @@ builder.Services.AddOcelot(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddDefaultPolicy(policy =>
     {
         policy.AllowAnyOrigin()
             .AllowAnyMethod()
@@ -50,7 +50,7 @@ builder.Services.AddAuthentication(options =>
 builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true,
     reloadOnChange: true);
 
-builder.Services.AddMultiTenant<AppTenantInfo>().WithConfigurationStore();
+//builder.Services.AddMultiTenant<AppTenantInfo>().WithConfigurationStore();
 builder.Services.AddAuthorization();
 var app = builder.Build();
 
@@ -61,9 +61,13 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-app.UseHttpsRedirection();
 
-app.UseMultiTenant();
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Docker"))
+{
+    app.UseHttpsRedirection();
+}
+
+//app.UseMultiTenant();
 
 app.UseAuthentication();
 app.UseAuthorization();

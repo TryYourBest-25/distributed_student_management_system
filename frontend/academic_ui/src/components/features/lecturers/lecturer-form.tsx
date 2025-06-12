@@ -25,7 +25,7 @@ import {
 import { lecturerFormSchema, type LecturerFormValues } from "@/lib/validators/lecturer-validator";
 import { Lecturer } from "@/types/lecturer";
 import { Faculty } from "@/types/faculty";
-import { useAuth } from "@/lib/providers/AuthProvider";
+import { useSession } from "next-auth/react";
 import { UserRole } from "@/types/auth";
 
 interface LecturerFormProps {
@@ -45,8 +45,9 @@ export function LecturerForm({
   availableFaculties,
   allowEditLecturerCode = true,
 }: LecturerFormProps) {
-  const { user } = useAuth();
-  const isPgv = user?.role === UserRole.PGV;
+  const { data: session } = useSession();
+  const userRoles = session?.user?.roles || [];
+  const isPgv = userRoles.includes('PGV');
 
   const form = useForm<LecturerFormValues>({
     resolver: zodResolver(lecturerFormSchema),
@@ -57,7 +58,7 @@ export function LecturerForm({
       degree: defaultValues?.degree || "",
       academic_rank: defaultValues?.academic_rank || "",
       specialization: defaultValues?.specialization || "",
-      faculty_code: defaultValues?.faculty_code || (isPgv && availableFaculties.length > 0 ? "" : user?.faculty_code || ""),
+      faculty_code: defaultValues?.faculty_code || (isPgv && availableFaculties.length > 0 ? "" : "it-faculty"),
     },
   });
 
@@ -72,10 +73,10 @@ export function LecturerForm({
         degree: defaultValues.degree || "",
         academic_rank: defaultValues.academic_rank || "",
         specialization: defaultValues.specialization || "",
-        faculty_code: defaultValues.faculty_code || (isPgv && availableFaculties.length > 0 ? "" : user?.faculty_code || ""),
+        faculty_code: defaultValues.faculty_code || (isPgv && availableFaculties.length > 0 ? "" : "it-faculty"),
       });
     }
-  }, [defaultValues, form, isPgv, availableFaculties, user?.faculty_code]);
+  }, [defaultValues, form, isPgv, availableFaculties]);
 
   return (
     <Form {...form}>

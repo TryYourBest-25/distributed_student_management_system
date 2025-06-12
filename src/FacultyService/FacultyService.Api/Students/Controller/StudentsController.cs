@@ -9,7 +9,7 @@ using Gridify;
 
 namespace FacultyService.Api.Students.Controller;
 
-[Route("api/v{version:apiVersion}/{facultyCode}/students")]
+[Route("api/v{version:apiVersion}/{facultyCode:facultyCode}/students")]
 [ApiVersion("1.0")]
 [ApiController]
 public class StudentsController : ControllerBase

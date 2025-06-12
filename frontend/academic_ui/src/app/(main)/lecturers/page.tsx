@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth } from '@/lib/providers/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { UserRole } from '@/types/auth';
 import { columns as lecturerColumnsDefinition } from '@/components/features/lecturers/lecturer-columns';
 import { LecturerDataTable } from '@/components/features/lecturers/lecturer-data-table';
@@ -28,7 +28,7 @@ const mockFaculties = [
 ];
 
 export default function LecturersPage() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const [lecturerToDelete, setLecturerToDelete] = useState<Lecturer | null>(null);
   
   // API hooks
@@ -37,7 +37,8 @@ export default function LecturersPage() {
   const createLecturerMutation = useCreateLecturer();
   const updateLecturerMutation = useUpdateLecturer();
 
-  const canManage = user?.role === UserRole.PGV;
+  const userRoles = session?.user?.roles || [];
+  const canManage = userRoles.includes('PGV');
 
   const handleDeleteLecturer = (lecturer: Lecturer) => {
     setLecturerToDelete(lecturer);

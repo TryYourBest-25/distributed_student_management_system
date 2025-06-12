@@ -34,6 +34,7 @@ type AddStudentForm = z.infer<typeof addStudentSchema>;
 
 interface AddStudentToCreditClassDialogProps {
   facultyCode: string;
+  servicePath: string;
   creditClassId: number;
   courseCode: string;
   groupNumber: number;
@@ -42,6 +43,7 @@ interface AddStudentToCreditClassDialogProps {
 
 export function AddStudentToCreditClassDialog({
   facultyCode,
+  servicePath,
   creditClassId,
   courseCode,
   groupNumber,
@@ -58,6 +60,7 @@ export function AddStudentToCreditClassDialog({
 
   const addStudentMutation = useAddStudentToCreditClass(
     facultyCode,
+    servicePath,
     creditClassId,
     {
       onSuccess: () => {
@@ -100,6 +103,7 @@ export function AddStudentToCreditClassDialog({
                   <FormControl>
                     <StudentSearchCombobox
                       facultyCode={facultyCode}
+                      servicePath={servicePath}
                       value={field.value}
                       onValueChange={field.onChange}
                       placeholder="Nhập mã sinh viên để tìm kiếm..."

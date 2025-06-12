@@ -40,7 +40,7 @@ export interface GridifyQueryParams {
   filter?: string;
 }
 
-const API_BASE_URL = '/api/academic';
+const API_BASE_URL = '/api/academic/v1';
 
 // Mock data để test khi API chưa sẵn sàng
 const mockLecturersData: LecturerApiResponse[] = [
@@ -85,7 +85,7 @@ class LecturerService {
 
   async getAllLecturers(queryParams?: GridifyQueryParams): Promise<PagedList<LecturerApiResponse>> {
     try {
-      const url = new URL(`${API_BASE_URL}/lecturers`, window.location.origin);
+      const url = new URL(`/api/academic/v1/lecturers`, window.location.origin);
       
       // Luôn gửi page và pageSize (bắt buộc cho backend)
       const page = queryParams?.page ?? 0;
@@ -161,7 +161,7 @@ class LecturerService {
 
   async getLecturerById(lecturerCode: string): Promise<LecturerApiResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/lecturers/${encodeURIComponent(lecturerCode)}`, {
+      const response = await fetch(`/api/academic/v1/lecturers/${encodeURIComponent(lecturerCode)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ class LecturerService {
 
   async createLecturer(lecturerData: LecturerApiRequest): Promise<string> {
     try {
-      const response = await fetch(`${API_BASE_URL}/lecturers`, {
+      const response = await fetch(`/api/academic/v1/lecturers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +218,7 @@ class LecturerService {
 
   async updateLecturer(lecturerCode: string, lecturerData: LecturerApiRequest): Promise<string> {
     try {
-      const response = await fetch(`${API_BASE_URL}/lecturers/${encodeURIComponent(lecturerCode)}`, {
+      const response = await fetch(`/api/academic/v1/lecturers/${encodeURIComponent(lecturerCode)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -253,7 +253,7 @@ class LecturerService {
 
   async deleteLecturer(lecturerCode: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/lecturers/${encodeURIComponent(lecturerCode)}`, {
+      const response = await fetch(`/api/academic/v1/lecturers/${encodeURIComponent(lecturerCode)}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -293,8 +293,8 @@ class LecturerService {
       if (query.filter) queryParams.append('filter', query.filter);
       if (query.orderBy) queryParams.append('orderBy', query.orderBy);
 
-      const url = `/api/academic/lecturers/search?${queryParams.toString()}`;
-      console.log('Searching lecturers from Academic API via proxy:', url);
+      const url = `/api/academic/v1/lecturers/search?${queryParams.toString()}`;
+      console.log('Searching lecturers from Faculty API via proxy:', url);
 
       const response = await fetch(url);
       
@@ -307,7 +307,7 @@ class LecturerService {
       console.error('Error searching lecturers:', error);
       // Return mock data for development
       const mockLecturers: LecturerBasicResponse[] = mockLecturersData.filter(lecturer => 
-        lecturer.lecturerCode.toLowerCase().includes(lecturerCodeQuery.toLowerCase())
+        lecturerCodeQuery && typeof lecturerCodeQuery === 'string' && lecturer.lecturerCode.toLowerCase().includes(lecturerCodeQuery.toLowerCase())
       );
       
       return {
@@ -325,7 +325,7 @@ class LecturerService {
 
   async searchLecturers(queryParams?: GridifyQueryParams): Promise<PagedList<LecturerApiResponse>> {
     try {
-      const url = new URL(`${API_BASE_URL}/lecturers/search`, window.location.origin);
+      const url = new URL(`/api/academic/v1/lecturers/search`, window.location.origin);
       
       // Luôn gửi page và pageSize (bắt buộc cho backend)
       const page = queryParams?.page ?? 0;

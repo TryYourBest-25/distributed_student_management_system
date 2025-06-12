@@ -87,7 +87,7 @@ var logger = new LoggerConfiguration().ReadFrom.Configuration(app.Configuration)
 logger.Information("Starting Academic Service API");
 app.UseExceptionHandler();
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Docker"))
 {
     app.UseHttpsRedirection();
 }

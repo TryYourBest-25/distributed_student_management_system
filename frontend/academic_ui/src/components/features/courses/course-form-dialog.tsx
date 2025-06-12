@@ -11,7 +11,7 @@ import {
   DialogClose, // Option to add a close button in footer if not using onCancel prop
 } from "@/components/ui/dialog";
 import { CourseForm, CourseFormValues } from './course-form';
-import { Course } from '@/app/(main)/courses/page';
+import { Course } from '@/types/course';
 
 interface CourseFormDialogProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ export const CourseFormDialog: React.FC<CourseFormDialogProps> = ({
   isLoading,
 }) => {
   const handleSubmit = (values: CourseFormValues) => {
-    onSubmit(values, existingCourse?.id);
+    onSubmit(values, existingCourse?.course_code);
   };
 
   // Chuẩn bị defaultValues cho CourseForm từ existingCourse

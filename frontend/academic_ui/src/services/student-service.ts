@@ -44,12 +44,16 @@ export interface UpdateStudentRequest {
 }
 
 class StudentService {
-  private baseUrl = "http://localhost:30000/api/v1";
+  private baseUrl = "/api/faculty/v1";
+
+  private getBaseUrl(servicePath: string): string {
+    return `/api/faculty/${servicePath}/v1`;
+  }
 
   // Get student detail by code
-  async getStudentById(facultyCode: string, studentCode: string): Promise<StudentDetailResponse> {
+  async getStudentById(facultyCode: string, servicePath: string, studentCode: string): Promise<StudentDetailResponse> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/students/${studentCode}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/students/${studentCode}`;
       console.log('Fetching student from:', url);
 
       const response = await fetch(url);
@@ -78,6 +82,7 @@ class StudentService {
   // Get student registrations
   async getStudentRegistrations(
     facultyCode: string, 
+    servicePath: string,
     studentCode: string, 
     params: GridifyQueryParams = {}
   ): Promise<PagedList<RegistrationBasicResponse>> {
@@ -89,7 +94,7 @@ class StudentService {
       if (params.filter) queryParams.append('filter', params.filter);
       if (params.orderBy) queryParams.append('orderBy', params.orderBy);
 
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/students/${studentCode}/registrations?${queryParams.toString()}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/students/${studentCode}/registrations?${queryParams.toString()}`;
       console.log('Fetching student registrations from:', url);
 
       const response = await fetch(url);
@@ -149,15 +154,19 @@ class StudentService {
   }
 
   // Search students by code and filter active students using GridifyQueryBuilder
-  async searchStudentsByCode(facultyCode: string, studentCodeQuery: string, params: GridifyQueryParams = {}): Promise<PagedList<StudentDetailResponse>> {
+  async searchStudentsByCode(facultyCode: string, servicePath: string, studentCodeQuery: string, params: GridifyQueryParams = {}): Promise<PagedList<StudentDetailResponse>> {
     try {
       const queryBuilder = new GridifyQueryBuilder()
       .setPage(params.page || 1)
       .setPageSize(params.pageSize || 10)
       .addOrderBy("StudentCode")
-      .addCondition("StudentCode",ConditionalOperator.Contains, studentCodeQuery, false, true)
+      .addCondition("StudentCode", ConditionalOperator.Contains, studentCodeQuery, false, true)
       .and()
-      .addCondition("IsSuspended",ConditionalOperator.Equal, false, false, true);
+      .addCondition("IsSuspended", ConditionalOperator.Equal, false, false, true);
+
+      const builtQuery = queryBuilder.build();
+      console.log('Built query filter:', builtQuery.filter);
+      console.log('Built query orderBy:', builtQuery.orderBy);
 
       // Convert to 0-based page for backend
       const backendPage = Math.max(0, (params.page || 1) - 1);
@@ -165,10 +174,10 @@ class StudentService {
       const queryParams = new URLSearchParams();
       queryParams.append('page', backendPage.toString());
       queryParams.append('pageSize', (params.pageSize || 10).toString());
-      queryParams.append('filter', queryBuilder.build().filter || '');
-      queryParams.append('orderBy', queryBuilder.build().orderBy || 'StudentCode');
+      queryParams.append('filter', builtQuery.filter || '');
+      queryParams.append('orderBy', builtQuery.orderBy || 'StudentCode');
 
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/students/search?${queryParams.toString()}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/students/search?${queryParams.toString()}`;
       console.log('Searching students from:', url);
 
       const response = await fetch(url);
@@ -212,7 +221,7 @@ class StudentService {
           classCode: 'D20CNTT02',
           facultyCode: facultyCode,
         },
-      ].filter(student => student.studentCode.toLowerCase().includes(studentCodeQuery.toLowerCase())) : [];
+      ].filter(student => studentCodeQuery && typeof studentCodeQuery === 'string' && student.studentCode.toLowerCase().includes(studentCodeQuery.toLowerCase())) : [];
       
       return {
         items: mockStudents,
@@ -228,9 +237,9 @@ class StudentService {
   }
 
   // Update student
-  async updateStudent(facultyCode: string, studentCode: string, data: UpdateStudentRequest): Promise<string> {
+  async updateStudent(facultyCode: string, servicePath: string, studentCode: string, data: UpdateStudentRequest): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/students/${studentCode}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/students/${studentCode}`;
       console.log('Updating student at:', url, data);
 
       const response = await fetch(url, {

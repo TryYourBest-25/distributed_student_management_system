@@ -116,7 +116,7 @@ var versionSet = app.NewApiVersionSet()
 
 app.UseCors();
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Docker"))
 {
     app.UseHttpsRedirection();
 }

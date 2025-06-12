@@ -45,7 +45,7 @@ if (!process.env.NEXTAUTH_SECRET) {
 }
 
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     KeycloakProvider({
       clientId: process.env.KEYCLOAK_CLIENT_ID,
@@ -66,11 +66,15 @@ export const authOptions: NextAuthOptions = {
         const decodedToken: { realm_access?: { roles: string[] } } = jwtDecode(account.access_token);
         const roles = decodedToken?.realm_access?.roles ?? [];
 
-        if (roles.includes('PGV') || roles.includes('KHOA')) {
-          return true;
-        } else {
-          return '/unauthorized';
-        }
+        // TODO: Tạm thời bỏ kiểm tra roles để test
+        // if (roles.includes('PGV') || roles.includes('KHOA')) {
+        //   return true;
+        // } else {
+        //   return '/unauthorized';
+        // }
+        
+        console.log('User roles:', roles);
+        return true; // Cho phép tất cả users đăng nhập tạm thời
       } catch (error) {
         console.error("Error decoding token:", error);
         return '/error?error=InvalidToken';
@@ -105,4 +109,4 @@ export const authOptions: NextAuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST }; 
+export { handler as GET, handler as POST, authOptions }; 

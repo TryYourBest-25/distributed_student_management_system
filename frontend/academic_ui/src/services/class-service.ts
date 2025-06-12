@@ -47,10 +47,12 @@ export interface GridifyQueryParams {
 }
 
 class ClassService {
-  private baseUrl = "http://localhost:30000/api/v1";
+  private getBaseUrl(servicePath: string): string {
+    return `/api/faculty/${servicePath}/v1`;
+  }
 
   // Get all classes for a specific faculty
-  async getAllClasses(facultyCode: string, params: GridifyQueryParams = {}): Promise<PagedList<ClassApiResponse>> {
+  async getAllClasses(facultyCode: string, servicePath: string, params: GridifyQueryParams = {}): Promise<PagedList<ClassApiResponse>> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -59,7 +61,7 @@ class ClassService {
       if (params.filter) queryParams.append('filter', params.filter);
       if (params.orderBy) queryParams.append('orderBy', params.orderBy);
 
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/classes?${queryParams.toString()}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/classes?${queryParams.toString()}`;
       console.log('Fetching classes from:', url);
 
       const response = await fetch(url);
@@ -77,9 +79,9 @@ class ClassService {
   }
 
   // Get class by code (basic info only)
-  async getClassById(facultyCode: string, classCode: string): Promise<ClassApiResponse> {
+  async getClassById(facultyCode: string, servicePath: string, classCode: string): Promise<ClassApiResponse> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/classes/${classCode}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/classes/${classCode}`;
       console.log('Fetching class from:', url);
 
       const response = await fetch(url);
@@ -104,7 +106,7 @@ class ClassService {
   }
 
   // Get students in class
-  async getStudentsInClass(facultyCode: string, classCode: string, params: GridifyQueryParams = {}): Promise<PagedList<StudentBasicResponse>> {
+  async getStudentsInClass(facultyCode: string, servicePath: string, classCode: string, params: GridifyQueryParams = {}): Promise<PagedList<StudentBasicResponse>> {
     try {
       const queryParams = new URLSearchParams();
       
@@ -113,7 +115,7 @@ class ClassService {
       if (params.filter) queryParams.append('filter', params.filter);
       if (params.orderBy) queryParams.append('orderBy', params.orderBy);
 
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/classes/${classCode}/students?${queryParams.toString()}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/classes/${classCode}/students?${queryParams.toString()}`;
       console.log('Fetching students in class from:', url);
 
       const response = await fetch(url);
@@ -130,7 +132,7 @@ class ClassService {
         { studentCode: "2001200001", firstName: "Nguyễn Văn", lastName: "A", gender: "Nam", birthDate: "2002-01-15" },
         { studentCode: "2001200002", firstName: "Trần Thị", lastName: "B", gender: "Nữ", birthDate: "2002-03-20" },
         { studentCode: "2001200003", firstName: "Lê Văn", lastName: "C", gender: "Nam", birthDate: "2002-05-10" },
-      ].filter(s => classCode === "D20CNTT01" || classCode.includes("CNTT"));
+      ].filter(s => classCode === "D20CNTT01" || (classCode && typeof classCode === 'string' && classCode.includes("CNTT")));
       
       return {
         items: mockStudents,
@@ -146,9 +148,9 @@ class ClassService {
   }
 
   // Create new class
-  async createClass(facultyCode: string, data: ClassApiRequest): Promise<string> {
+  async createClass(facultyCode: string, servicePath: string, data: ClassApiRequest): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/classes`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/classes`;
       console.log('Creating class at:', url, data);
 
       const response = await fetch(url, {
@@ -172,9 +174,9 @@ class ClassService {
   }
 
   // Update class
-  async updateClass(facultyCode: string, classCode: string, data: ClassApiRequest): Promise<string> {
+  async updateClass(facultyCode: string, servicePath: string, classCode: string, data: ClassApiRequest): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/classes/${classCode}`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/classes/${classCode}`;
       console.log('Updating class at:', url, data);
 
       const response = await fetch(url, {
@@ -198,10 +200,10 @@ class ClassService {
   }
 
   // Delete class by single ID
-  async deleteClass(facultyCode: string, classCode: string): Promise<string> {
+  async deleteClass(facultyCode: string, servicePath: string, classCode: string): Promise<string> {
     try {
       // Use the bulk delete endpoint with single ID
-      return this.deleteClassesByIds(facultyCode, [classCode]);
+      return this.deleteClassesByIds(facultyCode, servicePath, [classCode]);
     } catch (error) {
       console.error('Error deleting class:', error);
       // Mock success for development
@@ -210,9 +212,9 @@ class ClassService {
   }
 
   // Delete classes by IDs (bulk delete)
-  async deleteClassesByIds(facultyCode: string, classIds: string[]): Promise<string> {
+  async deleteClassesByIds(facultyCode: string, servicePath: string, classIds: string[]): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/classes/bulk`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/classes/bulk`;
       console.log('Deleting classes at:', url, classIds);
 
       const response = await fetch(url, {
@@ -239,14 +241,14 @@ class ClassService {
   }
 
   // Search classes with filtering
-  async searchClasses(facultyCode: string, query: string, params: GridifyQueryParams = {}): Promise<PagedList<ClassApiResponse>> {
+  async searchClasses(facultyCode: string, servicePath: string, query: string, params: GridifyQueryParams = {}): Promise<PagedList<ClassApiResponse>> {
     try {
       const searchParams = {
         ...params,
         filter: query ? `className.Contains("${query}") || classCode.Contains("${query}")` : params.filter,
       };
       
-      return this.getAllClasses(facultyCode, searchParams);
+      return this.getAllClasses(facultyCode, servicePath, searchParams);
     } catch (error) {
       console.error('Error searching classes:', error);
       // Return mock search results for development
@@ -273,9 +275,9 @@ class ClassService {
   }
 
   // Create student in class
-  async createStudentInClass(facultyCode: string, classCode: string, data: CreateStudentRequest): Promise<string> {
+  async createStudentInClass(facultyCode: string, servicePath: string, classCode: string, data: CreateStudentRequest): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/classes/${classCode}/students`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/classes/${classCode}/students`;
       console.log('Creating student in class at:', url, data);
 
       const response = await fetch(url, {
@@ -299,9 +301,9 @@ class ClassService {
   }
 
   // Delete students from class (bulk delete)
-  async deleteStudentsFromClass(facultyCode: string, studentCodes: string[]): Promise<string> {
+  async deleteStudentsFromClass(facultyCode: string, servicePath: string, studentCodes: string[]): Promise<string> {
     try {
-      const url = `${this.baseUrl}/${facultyCode.toLowerCase()}/students/bulk`;
+      const url = `${this.getBaseUrl(servicePath)}/${facultyCode.toLowerCase()}/students/bulk`;
       console.log('Deleting students from class at:', url, studentCodes);
 
       const response = await fetch(url, {
@@ -328,8 +330,14 @@ class ClassService {
   }
 
   // Delete single student from class
-  async deleteStudentFromClass(facultyCode: string, studentCode: string): Promise<string> {
-    return this.deleteStudentsFromClass(facultyCode, [studentCode]);
+  async deleteStudentFromClass(facultyCode: string, servicePath: string, studentCode: string): Promise<string> {
+    try {
+      return this.deleteStudentsFromClass(facultyCode, servicePath, [studentCode]);
+    } catch (error) {
+      console.error('Error deleting student from class:', error);
+      // Mock success for development
+      return `Đã xóa sinh viên ${studentCode} khỏi lớp thành công`;
+    }
   }
 }
 
