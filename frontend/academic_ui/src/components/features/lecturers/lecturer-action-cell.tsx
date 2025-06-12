@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { Lecturer } from '@/types/lecturer';
-import { useAuth } from '@/lib/providers/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { UserRole } from '@/types/auth';
 
 interface LecturerActionCellProps {
@@ -13,8 +13,9 @@ interface LecturerActionCellProps {
 }
 
 export function LecturerActionCell({ lecturer, onDelete }: LecturerActionCellProps) {
-  const { user } = useAuth();
-  const isPgv = user?.role === UserRole.PGV;
+  const { data: session } = useSession();
+  const userRoles = session?.user?.roles || [];
+  const isPgv = userRoles.includes('PGV');
 
   if (!isPgv) {
     return null;

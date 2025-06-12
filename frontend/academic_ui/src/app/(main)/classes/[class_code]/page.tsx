@@ -5,43 +5,44 @@ import { useParams, useRouter } from 'next/navigation';
 import PageHeader from '@/components/core/page-header';
 import { StudentDataTable, Student } from '@/components/features/students/student-data-table';
 import { columns as studentColumnsFunction } from '@/components/features/students/student-columns';
-import { useAuth } from '@/lib/providers/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { UserRole } from '@/types/auth';
 import { useClass, useStudentsInClass, useCreateStudentInClass, useDeleteStudentFromClass, useDeleteStudentsFromClass } from '@/hooks/use-classes';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import { ClassDetailSkeleton } from '@/components/features/classes/class-detail-skeleton';
 import { AddStudentDialog, type AddStudentFormValues } from '@/components/features/students/add-student-dialog';
-
-
+import { useTenantContext } from '@/contexts/tenant-context';
 
 export default function ClassDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const { getFacultyCode, getFacultyServicePath } = useTenantContext();
   const [addStudentDialogOpen, setAddStudentDialogOpen] = useState(false);
 
   const classCode = params.class_code as string;
   
-  const facultyCode = user?.role === UserRole.KHOA 
-    ? user?.faculty_code || 'it-faculty'
-    : 'it-faculty';
+  const userRoles = session?.user?.roles || [];
+  const isKhoa = userRoles.includes('KHOA');
+  const facultyCode = getFacultyCode();
+  const servicePath = getFacultyServicePath();
 
-  const { data: classDetails, isLoading: classLoading, error: classError } = useClass(facultyCode, classCode);
+  const { data: classDetails, isLoading: classLoading, error: classError } = useClass(facultyCode, servicePath, classCode);
   
-  const { data: studentsData, isLoading: studentsLoading, error: studentsError } = useStudentsInClass(facultyCode, classCode, {
+  const { data: studentsData, isLoading: studentsLoading, error: studentsError } = useStudentsInClass(facultyCode, servicePath, classCode, {
     page: 0,
     pageSize: 50
   });
 
-  const createStudentMutation = useCreateStudentInClass(facultyCode, classCode, {
+  const createStudentMutation = useCreateStudentInClass(facultyCode, servicePath, classCode, {
     onSuccess: () => {
       setAddStudentDialogOpen(false);
     }
   });
 
-  const deleteStudentMutation = useDeleteStudentFromClass(facultyCode, classCode);
-  const deleteStudentsMutation = useDeleteStudentsFromClass(facultyCode, classCode);
+  const deleteStudentMutation = useDeleteStudentFromClass(facultyCode, servicePath, classCode);
+  const deleteStudentsMutation = useDeleteStudentsFromClass(facultyCode, servicePath, classCode);
 
   const isLoading = classLoading || studentsLoading;
   const error = classError || studentsError;
@@ -63,8 +64,8 @@ export default function ClassDetailPage() {
   const studentTableColumns = useMemo(() => studentColumnsFunction(), []);
 
   const canManageStudents = useMemo(() => 
-    user?.role === UserRole.PGV || (user?.role === UserRole.KHOA && user?.faculty_code === classDetails?.faculty_code),
-    [user, classDetails]
+    userRoles.includes('PGV') || (userRoles.includes('KHOA') && isKhoa),
+    [userRoles, isKhoa]
   );
 
   const handleAddStudent = async (values: AddStudentFormValues) => {

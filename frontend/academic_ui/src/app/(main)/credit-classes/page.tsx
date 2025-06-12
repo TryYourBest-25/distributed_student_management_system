@@ -10,6 +10,8 @@ import { columns as creditClassColumnsDefinition } from '@/components/features/c
 import { useCreditClasses } from '@/hooks/use-credit-classes';
 import { type CreditClassBasicResponse } from '@/services/credit-class-service';
 import { RefreshCw } from 'lucide-react';
+import { useTenantContext } from '@/contexts/tenant-context';
+import { TenantNotSelected } from '@/components/tenant-not-selected';
 
 const transformCreditClassData = (creditClass: CreditClassBasicResponse): CreditClassInfo => {
   return {
@@ -27,11 +29,13 @@ const transformCreditClassData = (creditClass: CreditClassBasicResponse): Credit
 
 export default function CreditClassesPage() {
   const { data: session, status } = useSession();
+  const { selectedTenant, getFacultyCode, getFacultyServicePath } = useTenantContext();
 
-  // Per user request, temporarily hardcode faculty to 'it-faculty'
-  const facultyCode = 'it-faculty';
+  // Lấy faculty code và service path từ tenant được chọn
+  const facultyCode = getFacultyCode();
+  const servicePath = getFacultyServicePath();
 
-  const { data: creditClassesResponse, isLoading, error, refetch } = useCreditClasses(facultyCode, {
+  const { data: creditClassesResponse, isLoading, error, refetch } = useCreditClasses(facultyCode, servicePath, {
     page: 0,
     pageSize: 50,
   });
@@ -44,10 +48,18 @@ export default function CreditClassesPage() {
     const isKhoa = userRoles.includes(UserRole.KHOA);
 
     let currentTitle = 'Danh sách Lớp tín chỉ';
-    if (isPgv) {
+    if (selectedTenant) {
+      if (isPgv) {
+        currentTitle = `Lớp tín chỉ - ${selectedTenant.name}`;
+      } else if (isKhoa) {
+        currentTitle = `Lớp tín chỉ ${selectedTenant.name}`;
+      }
+    } else {
+      if (isPgv) {
         currentTitle = `Lớp tín chỉ - Khoa Công nghệ thông tin`;
-    } else if (isKhoa) {
+      } else if (isKhoa) {
         currentTitle = `Lớp tín chỉ Khoa Công nghệ thông tin`;
+      }
     }
     
     const managePermission = isPgv || isKhoa;
@@ -57,13 +69,23 @@ export default function CreditClassesPage() {
       pageTitle: currentTitle,
       canManage: managePermission,
     };
-  }, [creditClassesResponse, session]);
+  }, [creditClassesResponse, session, selectedTenant]);
 
   const handleRefresh = () => {
     refetch();
   };
   
   const columns = creditClassColumnsDefinition;
+
+  // Hiển thị thông báo nếu chưa chọn tenant
+  if (!selectedTenant) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Lớp tín chỉ" />
+        <TenantNotSelected message="Vui lòng chọn khoa để xem danh sách lớp tín chỉ." />
+      </div>
+    );
+  }
 
   if (status === 'loading' || isLoading) {
     return (
@@ -123,6 +145,7 @@ export default function CreditClassesPage() {
         data={creditClasses}
         canManage={canManage}
         facultyCode={facultyCode}
+        servicePath={servicePath}
       />
     </div>
   );

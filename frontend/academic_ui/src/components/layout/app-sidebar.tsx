@@ -89,7 +89,10 @@ export function AppSidebar() {
 
   const { user } = session;
 
-  const userRoles = user.roles as UserRole[];
+  const userRoles: UserRole[] = [];
+  const roles = user.roles || [];
+  if (roles.includes('PGV')) userRoles.push(UserRole.PGV);
+  if (roles.includes('KHOA')) userRoles.push(UserRole.KHOA);
 
   const accessibleNavItems = allNavItems.filter(item =>
     item.roles.some(role => userRoles.includes(role))

@@ -142,7 +142,6 @@ public partial class FacultyDbContext : DbContext, IMultiTenantDbContext
 
             entity.HasIndex(e => new { e.AcademicYear, e.Semester, e.CourseCode, e.GroupNumber, e.FacultyCode },
                 "uq_credit_class").IsUnique();
-
             entity.Property(e => e.FacultyCode)
                 .HasMaxLength(10)
                 .HasComment("Mã khoa quản lý lớp tín chỉ (FK và cột phân phối)")

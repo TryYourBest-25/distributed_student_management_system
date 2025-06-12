@@ -6,9 +6,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import PageHeader from '@/components/core/page-header';
-import { useAuth } from '@/lib/providers/AuthProvider';
+import { useSession } from 'next-auth/react';
 import { UserRole } from '@/types/auth';
 import { useCreditClass, useStudentsInCreditClass, useUpdateCreditClass } from '@/hooks/use-credit-classes';
+import { useTenantContext } from '@/contexts/tenant-context';
 import { StudentDetailResponse } from '@/services/student-service';
 import { type UpdateCreditClassRequest } from '@/services/credit-class-service';
 import { Button } from '@/components/ui/button';
@@ -77,13 +78,23 @@ type EditCreditClassFormValues = z.infer<typeof editCreditClassSchema>;
 export default function CreditClassDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { data: session } = useSession();
+  const { getFacultyCode, getFacultyServicePath } = useTenantContext();
   
   const creditClassId = Number(params.credit_class_id);
   
-  const facultyCode = user?.role === UserRole.KHOA 
-    ? user?.faculty_code || 'it-faculty'
-    : 'it-faculty';
+  const userRoles = session?.user?.roles || [];
+  const facultyCode = getFacultyCode();
+  const servicePath = getFacultyServicePath();
+
+  // Debug logging
+  console.log('Credit Class Detail Page - Debug Info:', {
+    creditClassId,
+    facultyCode,
+    servicePath,
+    params: params.credit_class_id,
+    isValidId: !isNaN(creditClassId) && creditClassId > 0
+  });
 
   const [studentsParams, setStudentsParams] = useState({
     page: 0,
@@ -109,6 +120,7 @@ export default function CreditClassDetailPage() {
   // Update mutation
   const updateCreditClassMutation = useUpdateCreditClass(
     facultyCode,
+    servicePath,
     creditClassId,
     {
       onSuccess: () => {
@@ -122,14 +134,14 @@ export default function CreditClassDetailPage() {
     data: creditClass, 
     isLoading: isLoadingCreditClass, 
     error: creditClassError 
-  } = useCreditClass(facultyCode, creditClassId);
+  } = useCreditClass(facultyCode, servicePath, creditClassId);
 
   // Fetch students in credit class
   const { 
     data: studentsResponse, 
     isLoading: isLoadingStudents, 
     error: studentsError 
-  } = useStudentsInCreditClass(facultyCode, creditClassId, studentsParams);
+  } = useStudentsInCreditClass(facultyCode, servicePath, creditClassId, studentsParams);
 
   const isLoading = isLoadingCreditClass || isLoadingStudents;
   const error = creditClassError || studentsError;
@@ -139,8 +151,8 @@ export default function CreditClassDetailPage() {
   }, [studentsResponse]);
 
   const canManage = useMemo(() => 
-    user?.role === UserRole.PGV || (user?.role === UserRole.KHOA && user?.faculty_code === facultyCode),
-    [user, facultyCode]
+    userRoles.includes('PGV') || userRoles.includes('KHOA'),
+    [userRoles]
   );
 
   // Initialize form when creditClass data is available and edit mode is enabled
@@ -174,6 +186,34 @@ export default function CreditClassDetailPage() {
     
     await updateCreditClassMutation.mutateAsync(requestData);
   };
+
+  // Check if creditClassId is valid
+  if (isNaN(creditClassId) || creditClassId <= 0) {
+    return (
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+        <Button variant="outline" size="sm" onClick={() => router.back()} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại danh sách
+        </Button>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-6 max-w-md">
+            <h3 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+              ID lớp tín chỉ không hợp lệ
+            </h3>
+            <p className="text-red-600 dark:text-red-300 mb-4">
+              ID lớp tín chỉ "{params.credit_class_id}" không hợp lệ. Vui lòng kiểm tra lại URL.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/credit-classes')}
+              className="border-red-300 text-red-700 hover:bg-red-50"
+            >
+              Về danh sách lớp tín chỉ
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -273,6 +313,7 @@ export default function CreditClassDetailPage() {
                 <>
                   <AddStudentToCreditClassDialog
                     facultyCode={facultyCode}
+                    servicePath={servicePath}
                     creditClassId={creditClassId}
                     courseCode={creditClass.courseCode}
                     groupNumber={creditClass.groupNumber}

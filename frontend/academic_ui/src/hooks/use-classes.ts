@@ -7,11 +7,11 @@ import { apiResponseToClass, type Class, classToApiRequest } from '@/types/class
 export const classKeys = {
   all: ['classes'] as const,
   lists: () => [...classKeys.all, 'list'] as const,
-  list: (facultyCode: string, params: GridifyQueryParams) => [...classKeys.lists(), facultyCode, params] as const,
+  list: (facultyCode: string, servicePath: string, params: GridifyQueryParams) => [...classKeys.lists(), facultyCode, servicePath, params] as const,
   details: () => [...classKeys.all, 'detail'] as const,
-  detail: (facultyCode: string, code: string) => [...classKeys.details(), facultyCode, code] as const,
+  detail: (facultyCode: string, servicePath: string, code: string) => [...classKeys.details(), facultyCode, servicePath, code] as const,
   students: () => [...classKeys.all, 'students'] as const,
-  studentsInClass: (facultyCode: string, classCode: string, params: GridifyQueryParams) => [...classKeys.students(), facultyCode, classCode, params] as const,
+  studentsInClass: (facultyCode: string, servicePath: string, classCode: string, params: GridifyQueryParams) => [...classKeys.students(), facultyCode, servicePath, classCode, params] as const,
 };
 
 // Mock faculties for mapping
@@ -22,50 +22,50 @@ const mockFaculties = [
 ];
 
 // Get all classes for a faculty
-export const useClasses = (facultyCode: string) => {
+export const useClasses = (facultyCode: string, servicePath: string) => {
   return useQuery({
     queryKey: classKeys.lists(),
     queryFn: async () => {
-      const response = await classService.getAllClasses(facultyCode, {
+      const response = await classService.getAllClasses(facultyCode, servicePath, {
         page: 0,
         pageSize: 50
       });
       
       return response.items.map(item => apiResponseToClass(item));
     },
-    enabled: !!facultyCode,
+    enabled: !!facultyCode && !!servicePath,
     staleTime: 5 * 60 * 1000, // 5 minutes to prevent duplicate calls
   });
 };
 
 // Get single class
-export const useClass = (facultyCode: string, classCode: string) => {
+export const useClass = (facultyCode: string, servicePath: string, classCode: string) => {
   return useQuery({
-    queryKey: classKeys.detail(facultyCode, classCode),
+    queryKey: classKeys.detail(facultyCode, servicePath, classCode),
     queryFn: async () => {
-      const response = await classService.getClassById(facultyCode, classCode);
+      const response = await classService.getClassById(facultyCode, servicePath, classCode);
       return apiResponseToClass(response);
     },
-    enabled: !!facultyCode && !!classCode,
+    enabled: !!facultyCode && !!servicePath && !!classCode,
     staleTime: 5 * 60 * 1000,
   });
 };
 
 // Get students in class
-export const useStudentsInClass = (facultyCode: string, classCode: string, params: GridifyQueryParams = {}) => {
+export const useStudentsInClass = (facultyCode: string, servicePath: string, classCode: string, params: GridifyQueryParams = {}) => {
   return useQuery({
-    queryKey: classKeys.studentsInClass(facultyCode, classCode, params),
+    queryKey: classKeys.studentsInClass(facultyCode, servicePath, classCode, params),
     queryFn: async () => {
-      const response = await classService.getStudentsInClass(facultyCode, classCode, params);
+      const response = await classService.getStudentsInClass(facultyCode, servicePath, classCode, params);
       return response;
     },
-    enabled: !!facultyCode && !!classCode,
+    enabled: !!facultyCode && !!servicePath && !!classCode,
     staleTime: 5 * 60 * 1000,
   });
 };
 
 // Create class mutation
-export const useCreateClass = (facultyCode: string, options?: {
+export const useCreateClass = (facultyCode: string, servicePath: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -73,7 +73,7 @@ export const useCreateClass = (facultyCode: string, options?: {
   
   return useMutation({
     mutationFn: async (data: ClassApiRequest) => {
-      return classService.createClass(facultyCode, data);
+      return classService.createClass(facultyCode, servicePath, data);
     },
     onSuccess: (result, variables) => {
       toast.success(`Đã tạo lớp ${variables.classCode} thành công!`);
@@ -95,18 +95,19 @@ export const useUpdateClass = (options?: {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ facultyCode, classCode, data }: { 
+    mutationFn: async ({ facultyCode, servicePath, classCode, data }: { 
       facultyCode: string; 
+      servicePath: string;
       classCode: string; 
       data: ClassApiRequest 
     }) => {
-      return classService.updateClass(facultyCode, classCode, data);
+      return classService.updateClass(facultyCode, servicePath, classCode, data);
     },
     onSuccess: (result, variables) => {
       toast.success('Cập nhật lớp học thành công');
       queryClient.invalidateQueries({ queryKey: classKeys.lists() });
       queryClient.invalidateQueries({ 
-        queryKey: classKeys.detail(variables.facultyCode, variables.classCode) 
+        queryKey: classKeys.detail(variables.facultyCode, variables.servicePath, variables.classCode) 
       });
       options?.onSuccess?.();
     },
@@ -118,7 +119,7 @@ export const useUpdateClass = (options?: {
 };
 
 // Delete class mutation
-export const useDeleteClass = (facultyCode: string, options?: {
+export const useDeleteClass = (facultyCode: string, servicePath: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -126,7 +127,7 @@ export const useDeleteClass = (facultyCode: string, options?: {
   
   return useMutation({
     mutationFn: async (classCode: string) => {
-      return classService.deleteClass(facultyCode, classCode);
+      return classService.deleteClass(facultyCode, servicePath, classCode);
     },
     onSuccess: (result, classCode) => {
       toast.success(`Đã xóa lớp ${classCode} thành công!`);
@@ -141,7 +142,7 @@ export const useDeleteClass = (facultyCode: string, options?: {
 };
 
 // Delete multiple classes mutation
-export const useDeleteClasses = (facultyCode: string, options?: {
+export const useDeleteClasses = (facultyCode: string, servicePath: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -149,7 +150,7 @@ export const useDeleteClasses = (facultyCode: string, options?: {
   
   return useMutation({
     mutationFn: async (classCodes: string[]) => {
-      return classService.deleteClassesByIds(facultyCode, classCodes);
+      return classService.deleteClassesByIds(facultyCode, servicePath, classCodes);
     },
     onSuccess: (result, classCodes) => {
       const count = classCodes.length;
@@ -158,7 +159,7 @@ export const useDeleteClasses = (facultyCode: string, options?: {
       // Invalidate detail queries for deleted classes
       classCodes.forEach(classCode => {
         queryClient.invalidateQueries({ 
-          queryKey: classKeys.detail(facultyCode, classCode) 
+          queryKey: classKeys.detail(facultyCode, servicePath, classCode) 
         });
       });
       options?.onSuccess?.();
@@ -171,24 +172,24 @@ export const useDeleteClasses = (facultyCode: string, options?: {
 };
 
 // Search classes
-export const useSearchClasses = (facultyCode: string, query: string, params: GridifyQueryParams = {}) => {
+export const useSearchClasses = (facultyCode: string, servicePath: string, query: string, params: GridifyQueryParams = {}) => {
   return useQuery({
-    queryKey: [...classKeys.lists(), 'search', facultyCode, query, params],
+    queryKey: [...classKeys.lists(), 'search', facultyCode, servicePath, query, params],
     queryFn: async () => {
-      const response = await classService.searchClasses(facultyCode, query, params);
+      const response = await classService.searchClasses(facultyCode, servicePath, query, params);
       
       return {
         ...response,
         items: response.items.map(item => apiResponseToClass(item))
       };
     },
-    enabled: !!facultyCode && !!query,
+    enabled: !!facultyCode && !!servicePath && !!query,
     staleTime: 5 * 60 * 1000,
   });
 };
 
 // Create student in class mutation
-export const useCreateStudentInClass = (facultyCode: string, classCode: string, options?: {
+export const useCreateStudentInClass = (facultyCode: string, servicePath: string, classCode: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -196,28 +197,24 @@ export const useCreateStudentInClass = (facultyCode: string, classCode: string, 
   
   return useMutation({
     mutationFn: async (data: CreateStudentRequest) => {
-      return classService.createStudentInClass(facultyCode, classCode, data);
+      return classService.createStudentInClass(facultyCode, servicePath, classCode, data);
     },
     onSuccess: (result, variables) => {
-      toast.success(`Đã thêm sinh viên ${variables.firstName} ${variables.lastName} thành công!`);
-      // Invalidate students list and class detail
+      toast.success(`Đã thêm sinh viên ${variables.firstName} ${variables.lastName} vào lớp ${classCode} thành công!`);
       queryClient.invalidateQueries({ 
-        queryKey: classKeys.studentsInClass(facultyCode, classCode, {}) 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: classKeys.detail(facultyCode, classCode) 
+        queryKey: classKeys.studentsInClass(facultyCode, servicePath, classCode, {}) 
       });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Lỗi khi thêm sinh viên: ' + error.message);
+      toast.error('Lỗi khi thêm sinh viên vào lớp: ' + error.message);
       options?.onError?.(error);
     },
   });
 };
 
 // Delete student from class mutation
-export const useDeleteStudentFromClass = (facultyCode: string, classCode: string, options?: {
+export const useDeleteStudentFromClass = (facultyCode: string, servicePath: string, classCode: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -225,28 +222,24 @@ export const useDeleteStudentFromClass = (facultyCode: string, classCode: string
   
   return useMutation({
     mutationFn: async (studentCode: string) => {
-      return classService.deleteStudentFromClass(facultyCode, studentCode);
+      return classService.deleteStudentFromClass(facultyCode, servicePath, studentCode);
     },
     onSuccess: (result, studentCode) => {
-      toast.success(`Đã xóa sinh viên ${studentCode} khỏi lớp thành công!`);
-      // Invalidate students list and class detail
+      toast.success(`Đã xóa sinh viên ${studentCode} khỏi lớp ${classCode} thành công!`);
       queryClient.invalidateQueries({ 
-        queryKey: classKeys.studentsInClass(facultyCode, classCode, {}) 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: classKeys.detail(facultyCode, classCode) 
+        queryKey: classKeys.studentsInClass(facultyCode, servicePath, classCode, {}) 
       });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Lỗi khi xóa sinh viên: ' + error.message);
+      toast.error('Lỗi khi xóa sinh viên khỏi lớp: ' + error.message);
       options?.onError?.(error);
     },
   });
 };
 
-// Delete multiple students from class mutation  
-export const useDeleteStudentsFromClass = (facultyCode: string, classCode: string, options?: {
+// Delete multiple students from class mutation
+export const useDeleteStudentsFromClass = (facultyCode: string, servicePath: string, classCode: string, options?: {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
 }) => {
@@ -254,22 +247,18 @@ export const useDeleteStudentsFromClass = (facultyCode: string, classCode: strin
   
   return useMutation({
     mutationFn: async (studentCodes: string[]) => {
-      return classService.deleteStudentsFromClass(facultyCode, studentCodes);
+      return classService.deleteStudentsFromClass(facultyCode, servicePath, studentCodes);
     },
     onSuccess: (result, studentCodes) => {
       const count = studentCodes.length;
-      toast.success(`Đã xóa ${count} sinh viên khỏi lớp thành công!`);
-      // Invalidate students list and class detail
+      toast.success(`Đã xóa ${count} sinh viên khỏi lớp ${classCode} thành công!`);
       queryClient.invalidateQueries({ 
-        queryKey: classKeys.studentsInClass(facultyCode, classCode, {}) 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: classKeys.detail(facultyCode, classCode) 
+        queryKey: classKeys.studentsInClass(facultyCode, servicePath, classCode, {}) 
       });
       options?.onSuccess?.();
     },
     onError: (error: Error) => {
-      toast.error('Lỗi khi xóa sinh viên: ' + error.message);
+      toast.error('Lỗi khi xóa sinh viên khỏi lớp: ' + error.message);
       options?.onError?.(error);
     },
   });

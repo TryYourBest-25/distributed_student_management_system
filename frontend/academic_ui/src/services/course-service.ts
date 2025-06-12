@@ -23,15 +23,15 @@ export interface GridifyQueryParams {
   filter?: string;
 }
 
-// Course API Response interface
+// Course API Response interface from Academic Service
 export interface CourseBasicResponse {
   courseCode: string;
   courseName: string;
-  credits: number;
-  description?: string;
+  lectureCredit: number;
+  labCredit: number;
 }
 
-const API_BASE_URL = '/api/academic';
+const API_BASE_URL = '/api/academic/v1';
 
 // Mock data để test khi API chưa sẵn sàng
 const mockCoursesData: CourseApiResponse[] = [
@@ -56,7 +56,7 @@ const mockCoursesData: CourseApiResponse[] = [
 ];
 
 class CourseService {
-  private baseUrl = "http://localhost:30000/api/v1";
+  private baseUrl = "/api/academic/v1";
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
@@ -69,7 +69,7 @@ class CourseService {
 
   private async checkApiAvailability(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses`, {
+      const response = await fetch(`${this.baseUrl}/courses`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ class CourseService {
 
   async getAllCourses(queryParams?: GridifyQueryParams): Promise<PagedList<CourseApiResponse>> {
     try {
-      const url = new URL(`${API_BASE_URL}/courses`, window.location.origin);
+      const url = new URL(`${this.baseUrl}/courses`, window.location.origin);
       
       // Luôn gửi page và pageSize (bắt buộc cho backend)
       const page = queryParams?.page ?? 0;
@@ -158,7 +158,7 @@ class CourseService {
 
   async getCourseById(courseCode: string): Promise<CourseApiResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses/${encodeURIComponent(courseCode)}`, {
+      const response = await fetch(`${this.baseUrl}/courses/${encodeURIComponent(courseCode)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ class CourseService {
 
   async createCourse(courseData: CourseApiRequest): Promise<string> {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses`, {
+      const response = await fetch(`${this.baseUrl}/courses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -212,7 +212,7 @@ class CourseService {
 
   async updateCourse(courseCode: string, courseData: CourseApiRequest): Promise<string> {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses/${encodeURIComponent(courseCode)}`, {
+      const response = await fetch(`${this.baseUrl}/courses/${encodeURIComponent(courseCode)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -244,7 +244,7 @@ class CourseService {
 
   async deleteCourse(courseCode: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses/${encodeURIComponent(courseCode)}`, {
+      const response = await fetch(`${this.baseUrl}/courses/${encodeURIComponent(courseCode)}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -271,7 +271,7 @@ class CourseService {
 
   async searchCourses(queryParams?: GridifyQueryParams): Promise<PagedList<CourseApiResponse>> {
     try {
-      const url = new URL(`${API_BASE_URL}/courses/search`, window.location.origin);
+      const url = new URL(`${this.baseUrl}/courses/search`, window.location.origin);
       
       // Luôn gửi page và pageSize (bắt buộc cho backend)
       const page = queryParams?.page ?? 0;
@@ -319,7 +319,7 @@ class CourseService {
       if (query.filter) queryParams.append('filter', query.filter);
       if (query.orderBy) queryParams.append('orderBy', query.orderBy);
 
-      const url = `/api/academic/courses/search?${queryParams.toString()}`;
+      const url = `/api/academic/v1/courses/search?${queryParams.toString()}`;
       console.log('Searching courses from Academic API via proxy:', url);
 
       const response = await fetch(url);
@@ -333,10 +333,10 @@ class CourseService {
       console.error('Error searching courses:', error);
       // Return mock data for development
       const mockCourses: CourseBasicResponse[] = [
-        { courseCode: "CS101", courseName: "Nhập môn Lập trình", credits: 3 },
-        { courseCode: "CS102", courseName: "Cấu trúc Dữ liệu", credits: 3 },
-        { courseCode: "CS201", courseName: "Lập trình Hướng đối tượng", credits: 4 },
-      ].filter(course => course.courseCode.toLowerCase().includes(courseCodeQuery.toLowerCase()));
+        { courseCode: "CS101", courseName: "Nhập môn Lập trình", lectureCredit: 2, labCredit: 1 },
+        { courseCode: "CS102", courseName: "Cấu trúc Dữ liệu", lectureCredit: 2, labCredit: 1 },
+        { courseCode: "CS201", courseName: "Lập trình Hướng đối tượng", lectureCredit: 3, labCredit: 1 },
+      ].filter(course => courseCodeQuery && typeof courseCodeQuery === 'string' && course.courseCode.toLowerCase().includes(courseCodeQuery.toLowerCase()));
       
       return {
         items: mockCourses,

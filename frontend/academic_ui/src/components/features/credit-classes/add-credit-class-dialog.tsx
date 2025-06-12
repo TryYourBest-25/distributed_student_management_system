@@ -47,12 +47,14 @@ interface AddCreditClassDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   facultyCode: string;
+  servicePath: string;
 }
 
 export function AddCreditClassDialog({
   open,
   onOpenChange,
   facultyCode,
+  servicePath,
 }: AddCreditClassDialogProps) {
   const form = useForm<AddCreditClassFormValues>({
     resolver: zodResolver(addCreditClassSchema),
@@ -66,7 +68,7 @@ export function AddCreditClassDialog({
     },
   });
 
-  const createCreditClassMutation = useCreateCreditClass(facultyCode, {
+  const createCreditClassMutation = useCreateCreditClass(facultyCode, servicePath, {
     onSuccess: () => {
       form.reset();
       onOpenChange(false);

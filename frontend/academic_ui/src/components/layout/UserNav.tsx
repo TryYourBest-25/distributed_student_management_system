@@ -55,7 +55,7 @@ const UserNav = () => {
               {user.email}
             </p>
             <p className="text-xs leading-none text-muted-foreground pt-1">
-              Vai trò: {user.roles.join(', ')}
+              Vai trò: {user.roles?.join(', ') || 'N/A'}
             </p>
           </div>
         </DropdownMenuLabel>

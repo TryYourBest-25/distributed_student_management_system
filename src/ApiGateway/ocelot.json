@@ -5,8 +5,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 14200
+          "Host": "academic-service",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/academic/{everything}",
@@ -23,11 +23,11 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 30000
+          "Host": "faculty-service-it",
+          "Port": 8080
         }
       ],
-      "UpstreamPathTemplate": "/faculty/{everything}",
+      "UpstreamPathTemplate": "/faculty/it/{everything}",
       "UpstreamHttpMethod": [
         "GET",
         "POST",
@@ -41,8 +41,26 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 14100
+          "Host": "faculty-service-tel",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/faculty/tel/{everything}",
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH"
+      ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "tuition-service",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/tuition/{everything}",

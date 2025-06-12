@@ -1,0 +1,9 @@
+---
+description: 
+globs: **.tex
+alwaysApply: false
+---
+- Bài nghiên cứu cần dài từ 4-6 trang.
+- Bài nghiên cứu cần theo tiêu chuẩn IEEE.
+- [ARCHITECTURE.md](mdc:distributed_student_management_system/ARCHITECTURE.md)
+- Web site tài liệu citus: https://docs.citusdata.com/en/v13.0/

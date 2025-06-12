@@ -115,7 +115,7 @@ if (app.Environment.IsDevelopment())
     Serilog.Debugging.SelfLog.Enable(Console.Error);
 }
 
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Docker"))
 {
     app.UseHttpsRedirection();
 }

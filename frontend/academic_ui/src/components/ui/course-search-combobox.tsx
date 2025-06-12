@@ -148,7 +148,7 @@ export function CourseSearchCombobox({
                   <div className="flex flex-col">
                     <span className="font-medium text-sm">{course.courseCode}</span>
                     <span className="text-xs text-muted-foreground">
-                      {course.courseName} ({course.credits} tín chỉ)
+                      {course.courseName} ({course.lectureCredit + course.labCredit} tín chỉ)
                     </span>
                   </div>
                 </button>
@@ -161,7 +161,7 @@ export function CourseSearchCombobox({
       {/* Display selected course info */}
       {selectedCourse && searchQuery === selectedCourse.courseCode && (
         <div className="mt-2 text-xs text-muted-foreground">
-          {selectedCourse.courseName} ({selectedCourse.credits} tín chỉ)
+          {selectedCourse.courseName} ({selectedCourse.lectureCredit + selectedCourse.labCredit} tín chỉ)
         </div>
       )}
     </div>
