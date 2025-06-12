@@ -1,0 +1,89 @@
+@startuml C4_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+' Enforce a top-down layout direction for overall clarity
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+
+title Biểu đồ Container cho Hệ thống Quản lý Sinh viên Phân tán
+
+' --- ACTORS ---
+Person(academic_staff, "Phòng Giáo Vụ / Văn phòng Khoa")
+Person(accounting_staff, "Phòng Kế toán")
+
+System_Boundary(dsms, "Hệ thống Quản lý Sinh viên Phân tán") {
+
+    ' --- TIERS / BOUNDARIES (Structure is unchanged) ---
+    Boundary(frontends, "Ứng dụng Client") {
+        Container(academic_ui, "Giao diện Học vụ", "Next.js/React", "Xử lý các nghiệp vụ học vụ.")
+        Container(accounting_ui, "Giao diện Kế toán", "Next.js/React", "Xử lý các nghiệp vụ tài chính.")
+    }
+
+    Boundary(auth_system, "Xác thực") {
+        Container(keycloak, "Keycloak", "Keycloak v26.0", "Cung cấp SSO và Quản lý Định danh/Truy cập.")
+        ContainerDb(keycloak_db, "CSDL Keycloak", "PostgreSQL 16", "Lưu trữ realm, người dùng, và vai trò cho Keycloak.")
+    }
+
+    Boundary(data_platform, "Nền tảng Dữ liệu") {
+        Container(proxy, "HAProxy", "HAProxy 3.0", "Cân bằng tải cho kết nối CSDL.")
+        
+        Boundary(citus_cluster, "Cụm Citus (Học vụ)") {
+            Container(coordinator, "Coordinator", "Citus 13.0 / PG16", "Quản lý cụm, điều phối truy vấn.")
+            Container(workers, "Workers (x2)", "Citus 13.0 / PG16", "Lưu trữ các phân mảnh dữ liệu.")
+        }
+        
+        ContainerDb(accounting_db, "CSDL Kế toán", "PostgreSQL 16", "CSDL riêng cho dữ liệu tài chính.")
+    }
+
+    Boundary(event_backbone, "Trục Sự kiện (CDC)") {
+        Container(debezium_source, "Debezium Source", "Debezium Connect 3.0", "Bắt các thay đổi từ WAL của các Citus worker.")
+        Container(kafka, "Kafka", "Confluent CP", "Nền tảng streaming sự kiện phân tán.")
+        Container(debezium_sink, "Debezium Sink", "Debezium Connect 3.0", "Ghi sự kiện Kafka tới CSDL kế toán.")
+    }
+
+    Boundary(search_platform, "Tìm kiếm & Phân tích") {
+        Container(elasticsearch, "Elasticsearch", "Elasticsearch 8.18", "Công cụ tìm kiếm toàn văn.")
+        Container(kibana, "Kibana", "Kibana 8.18", "Giao diện trực quan hóa dữ liệu Elasticsearch.")
+    }
+    
+    Boundary(management_uis, "Giao diện Quản lý") {
+        Container(kafkaui, "Kafka UI", "Kafbat UI", "Giao diện web để quản lý Kafka.")
+    }
+
+}
+
+' --- RELATIONSHIPS (Re-defined for clarity and correctness) ---
+
+' Tương tác Người dùng (Flows downwards and across)
+Rel_D(academic_staff, academic_ui, "Sử dụng", "HTTPS")
+Rel_D(accounting_staff, accounting_ui, "Sử dụng", "HTTPS")
+Rel(academic_staff, kibana, "Tìm kiếm và trực quan hóa logs", "HTTPS")
+
+' Frontend tới các dịch vụ lõi (Flows downwards and across)
+Rel_D(academic_ui, keycloak, "Xác thực với", "HTTPS/OAuth")
+Rel_D(accounting_ui, keycloak, "Xác thực với", "HTTPS/OAuth")
+
+Rel_D(academic_ui, proxy, "Đọc/Ghi", "SQL")
+Rel_D(accounting_ui, accounting_db, "Đọc/Ghi", "SQL")
+Rel(academic_ui, elasticsearch, "Tìm kiếm", "HTTP/API")
+
+' Nội bộ các dịch vụ (Flows mostly downwards)
+Rel_D(keycloak, keycloak_db, "Lưu trữ dữ liệu vào", "JDBC")
+Rel_D(proxy, coordinator, "Điều hướng kết nối tới")
+Rel_D(coordinator, workers, "Phân tán truy vấn tới")
+Rel_D(kibana, elasticsearch, "Truy vấn và quản lý")
+
+' Luồng CDC (Flows left to right, creating a pipeline)
+' Corrected logic: Debezium Source reads from Workers
+Rel_R(workers, debezium_source, "Theo dõi WAL", "DB Replication Slot")
+Rel_R(debezium_source, kafka, "Gửi sự kiện thay đổi vào topic", "Kafka Protocol")
+Rel_R(kafka, debezium_sink, "Đọc sự kiện từ topic", "Kafka Protocol")
+' Corrected logic: Debezium Sink writes to the Accounting DB
+Rel_D(debezium_sink, accounting_db, "Ghi (Upsert/Delete) dữ liệu", "JDBC")
+
+' Giao diện quản lý (Connects upwards or sideways to what it manages)
+Rel_U(kafkaui, kafka, "Quản lý topics và brokers")
+Rel_R(kafkaui, debezium_source, "Cấu hình source connectors")
+Rel_R(kafkaui, debezium_sink, "Cấu hình sink connectors")
+
+@enduml 
