@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <UserSecretsId>6353e7eb-8833-483f-aa1a-f63b141f7125</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Elastic.Serilog.Sinks" Version="8.18.1"/>
+      <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3" />
+      <PackageReference Include="FluentResults" Version="3.16.0" />
+      <PackageReference Include="Gridify.EntityFramework" Version="2.16.3" />
+      <PackageReference Include="MediatR" Version="12.5.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.5"/>
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+      <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\AcademicService.Domain\AcademicService.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Faculties\CommandHandler\"/>
+        <Folder Include="Faculties\Command\"/>
+        <Folder Include="Faculties\QueryHandler\"/>
+        <Folder Include="Faculties\Query\"/>
+        <Folder Include="Lecturers\QueryHandler\"/>
+        <Folder Include="Lecturers\Query\"/>
+    </ItemGroup>
+
+</Project>
