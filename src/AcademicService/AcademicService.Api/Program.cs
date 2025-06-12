@@ -1,71 +1,66 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using AcademicService.Api.Exception;
 using AcademicService.Application;
 using AcademicService.Application.DbContext;
-using AcademicService.Domain;
 using AcademicService.Infrastructure;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Serilog;
 using MediatR;
-using Microsoft.AspNetCore.Http.Json;
-using Microsoft.EntityFrameworkCore;
-using Serilog.Core;
-using Shared;
+using Shared.Exception;
 using Shared.Logging;
+using Asp.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Cấu hình Autofac --- 
-builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
-builder.Host.ConfigureContainer<ContainerBuilder>(cf =>
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory()).ConfigureContainer<ContainerBuilder>(cf =>
 {
     cf.RegisterModule(new MediatRModule(typeof(Program).Assembly,
         typeof(IApplicationMarker).Assembly));
-});
-// --- Cấu hình Serilog --- 
-// builder.Host.ConfigureSharedLogging(builder.Environment.ApplicationName);
+
+    cf.RegisterGeneric(typeof(MediatRLoggingBehavior<,>)).As(typeof(IPipelineBehavior<,>)).InstancePerLifetimeScope();
+}).UseSerilog((context, provider, configuration) => { configuration.ReadFrom.Configuration(context.Configuration); });
 
 builder.Services.Configure<RouteOptions>(options =>
+    {
+        options.LowercaseUrls = true;
+        options.LowercaseQueryStrings = true;
+    }).AddProblemDetails().AddExceptionHandler<ExceptionHandler>().AddOpenApiDocument()
+    .AddDbContext<AcademicDbContext>()
+    .AddControllers().AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
+
+builder.Services.AddApiVersioning(options =>
 {
-    options.LowercaseUrls = true;
-    options.LowercaseQueryStrings = true;
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = new HeaderApiVersionReader("X-Api-Version");
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
 });
 
-builder.Services.AddProblemDetails();
 
-builder.Services.AddExceptionHandler<ExceptionHandler>();
+builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    // .AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true).AddJsonFile(
+    //     $"appsettings.shared.{builder.Environment.EnvironmentName}.json", optional: true,
+    //     reloadOnChange: true)
+    .AddEnvironmentVariables();
 
-builder.Services.AddControllers().AddJsonOptions(options =>
+builder.Services.AddCors(options =>
 {
-    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
 });
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApiDocument();
-
-builder.Services.Configure<JsonOptions>(options =>
-{
-    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
-});
-
-builder.Configuration.AddUserSecrets<Program>();
-
-builder.Configuration.AddJsonFile("appsettings.shared.json", optional: true, reloadOnChange: true)
-    .AddJsonFile($"appsettings.shared.{builder.Environment.EnvironmentName}.json", optional: true)
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-builder.Configuration.AddEnvironmentVariables();
-
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(MediatRLoggingBehavior<,>));
-builder.Services.AddDbContext<AcademicDbContext>();
-
-builder.Host.UseSerilog();
-
 var app = builder.Build();
-
-Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(app.Configuration).CreateLogger();
 
 app.UseSerilogRequestLogging(options =>
 {
@@ -78,21 +73,26 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseOpenApi();
     app.UseSwaggerUi();
     app.UseDeveloperExceptionPage();
+    Serilog.Debugging.SelfLog.Enable(Console.Error);
 }
 
+var logger = new LoggerConfiguration().ReadFrom.Configuration(app.Configuration)
+    .CreateLogger();
+
+logger.Information("Starting Academic Service API");
 app.UseExceptionHandler();
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
-
+app.UseCors();
 app.MapControllers();
-
-app.MapGet("/", () => "Hello World!");
 
 app.Run();

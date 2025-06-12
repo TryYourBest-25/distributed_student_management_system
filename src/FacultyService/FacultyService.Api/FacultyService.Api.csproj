@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0"/>
+        <PackageReference Include="Elastic.Serilog.Sinks" Version="8.18.1"/>
+        <PackageReference Include="EntityFrameworkCore.Exceptions.PostgreSQL" Version="8.1.3" />
+        <PackageReference Include="Finbuckle.MultiTenant" Version="9.2.0"/>
+        <PackageReference Include="Finbuckle.MultiTenant.AspNetCore" Version="9.2.0"/>
+        <PackageReference Include="FluentResults" Version="3.16.0" />
+        <PackageReference Include="Gridify.EntityFramework" Version="2.16.3" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+        <PackageReference Include="NSwag.AspNetCore" Version="14.4.0" />
+        <PackageReference Include="Serilog.Enrichers.Context" Version="4.6.5"/>
+        <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
+        <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0"/>
+        <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Autofac">
+        <HintPath>..\..\..\..\..\..\.nuget\packages\autofac\8.2.1\lib\net8.0\Autofac.dll</HintPath>
+      </Reference>
+      <Reference Include="Autofac.Extensions.DependencyInjection">
+        <HintPath>..\..\..\..\..\..\.nuget\packages\autofac.extensions.dependencyinjection\10.0.0\lib\net8.0\Autofac.Extensions.DependencyInjection.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\Shared\appsettings.shared.Development.json">
+        <Link>appsettings.shared.Development.json</Link>
+      </Content>
+      <Content Include="..\..\Shared\appsettings.shared.json">
+        <Link>appsettings.shared.json</Link>
+      </Content>
+      <Content Include="..\..\Shared\tenants.Development.json">
+        <Link>tenants.Development.json</Link>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\FacultyService.Infrastructure\FacultyService.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="CreditClasses\Controller\"/>
+        <Folder Include="CreditClasses\Request\"/>
+        <Folder Include="Registrations\"/>
+        <Folder Include="Students\"/>
+    </ItemGroup>
+
+</Project>

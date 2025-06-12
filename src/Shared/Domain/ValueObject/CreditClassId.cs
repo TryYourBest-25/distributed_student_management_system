@@ -1,0 +1,2 @@
+namespace Shared.Domain.ValueObject;
+

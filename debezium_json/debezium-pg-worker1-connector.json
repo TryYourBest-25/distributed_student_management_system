@@ -1,0 +1,23 @@
+{
+    "name": "student-sync-worker1-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "tasks.max": "1",
+        "database.hostname": "citus_worker_1",
+        "database.port": "5432",
+        "database.user": "postgres",
+        "database.password": "postgres",
+        "database.dbname": "distributed_student_db",
+        "database.server.name": "dsms_citus_worker1",
+        "table.include.list": "public.student",
+        "publication.name": "dbz_student_shards_publication",
+        "publication.autocreate.mode": "disabled",
+        "plugin.name": "pgoutput",
+        "slot.name": "debezium_student_worker1_slot",
+        "snapshot.mode": "initial",
+        "topic.prefix": "sync.dsms.public.shards",
+        "database.history.kafka.bootstrap.servers": "kafka0:29092",
+        "database.history.kafka.topic": "dbz_student_shards_history"
+        
+    }
+}

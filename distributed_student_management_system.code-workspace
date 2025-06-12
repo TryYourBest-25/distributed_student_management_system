@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".",
+		},
+		{
+			"path": "./src"
+		},
+		{
+			"path": "./src/FalcultyItService"
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "automatic"
+	}
+}

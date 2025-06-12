@@ -1,0 +1,21 @@
+{
+    "name": "target-sink-worker-1",
+    "config": {
+        "connector.class": "io.debezium.connector.jdbc.JdbcSinkConnector",
+        "tasks.max": "1",
+        "topics": "debezium-source.public.student",
+        "connection.url": "jdbc:postgresql://acc-postgres-db:5432/acc_db",
+        "connection.username": "acc_user",
+        "connection.password": "acc_user",
+        "table.name.format": "public.student_basic_info",
+        "insert.mode": "upsert",
+        "primary.key.mode": "record_key",
+        "primary.key.fields": "student_code",
+        "hibernate.dialect": "org.hibernate.dialect.PostgreSQLDialect",
+        "delete.enabled": "true",
+        "schema.evolution": "none",
+        "errors.tolerance": "none",
+        "errors.log.enable": "true",
+        "errors.log.include.messages": "true",
+    }
+}

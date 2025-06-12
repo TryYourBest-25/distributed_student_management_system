@@ -1,0 +1,26 @@
+{
+    "name": "sync_worker_1",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "tasks.max": "1",
+        "database.hostname": "worker1",
+        "database.port": "5432",
+        "database.user": "coor",
+        "database.password": "coor",
+        "database.dbname": "dsmsdb",
+        "database.server.id": "18749",
+        "database.server.name": "worker1",
+        "table.include.list": "public.student",
+        "publication.name": "dbz_student_shards_publication",
+        "publication.autocreate.mode": "disabled",
+        "plugin.name": "pgoutput",
+        "slot.name": "debezium_student_worker1_slot",
+        "snapshot.mode": "initial",
+        "schema.history.internal.kafka.bootstrap.servers": "kafka0:29092",
+        "schema.history.internal.kafka.topic": "schema-changes.dsms",
+        "topic.prefix": "debezium-source",
+        "transforms": "unwrap",
+        "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+        "transforms.unwrap.drop.tombstones": "false"
+    }
+}
