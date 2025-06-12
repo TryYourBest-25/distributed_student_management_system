@@ -2354,6 +2354,9 @@ LIMIT @__p_1 OFFSET @__p_0"
 2025-06-11T18:18:05.4232427+07:00 [INF] (///) Hosting environment: "Development"
 2025-06-11T18:18:05.4233218+07:00 [INF] (///) Content root path: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/TuitionService/TuitionService.Api"
 2025-06-11T18:18:05.4234272+07:00 [DBG] (///) Hosting started
+<<<<<<< HEAD
 2025-06-11T22:00:21.0681909+07:00 [INF] (///) Application is shutting down...
 2025-06-11T22:00:21.0691363+07:00 [DBG] (///) Hosting stopping
 2025-06-11T22:00:21.0853340+07:00 [DBG] (///) Hosting stopped
+=======
+>>>>>>> refs/remotes/origin/feature/phunguy65
