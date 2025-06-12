@@ -1,5 +1,56 @@
 # This is a generated file. Not intended for manual editing.
 services:
+  academic-service:
+    build:
+      context: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src"
+      dockerfile: "./AcademicService/Dockerfile"
+      target: "build"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net9.0/AcademicService.Api.dll"
+    environment: {}
+    image: "academicservice.api:dev"
+    ports: []
+    volumes:
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/AcademicService/AcademicService.Api:/app:rw"
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system:/src:rw"
+    - "/home/PNguyen/.nuget/packages:/root/.nuget/packages"
+    working_dir: "/app"
+  api-gateway:
+    build:
+      context: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src"
+      dockerfile: "./ApiGateway/Dockerfile"
+      target: "build"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net9.0/ApiGateway.dll"
+    environment: {}
+    image: "apigateway:dev"
+    ports: []
+    volumes:
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/ApiGateway:/app:rw"
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system:/src:rw"
+    - "/home/PNguyen/.nuget/packages:/root/.nuget/packages"
+    working_dir: "/app"
+  faculty-service-it:
+    build:
+      context: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src"
+      dockerfile: "./FacultyService/Dockerfile"
+      target: "build"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net9.0/FacultyService.Api.dll"
+    environment: {}
+    image: "facultyservice.api:dev"
+    ports: []
+    volumes:
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/FacultyService/FacultyService.Api:/app:rw"
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system:/src:rw"
+    - "/home/PNguyen/.nuget/packages:/root/.nuget/packages"
+    working_dir: "/app"
   faculty-service-tel:
     build:
       context: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src"
@@ -14,6 +65,23 @@ services:
     ports: []
     volumes:
     - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/FacultyService/FacultyService.Api:/app:rw"
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system:/src:rw"
+    - "/home/PNguyen/.nuget/packages:/root/.nuget/packages"
+    working_dir: "/app"
+  tuition-service:
+    build:
+      context: "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src"
+      dockerfile: "./TuitionService/Dockerfile"
+      target: "build"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net9.0/TuitionService.Api.dll"
+    environment: {}
+    image: "tuitionservice.api:dev"
+    ports: []
+    volumes:
+    - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system/src/TuitionService/TuitionService.Api:/app:rw"
     - "/home/PNguyen/Workspace/MyProject/distributed_student_management_system:/src:rw"
     - "/home/PNguyen/.nuget/packages:/root/.nuget/packages"
     working_dir: "/app"

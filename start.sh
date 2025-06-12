@@ -73,7 +73,7 @@ echo "Creating sync worker-2 connector..."
 curl -X POST -H "Content-Type: application/json" --data @debezium_json/sync_worker_1.json http://localhost:${DEBEZIUM_SOURCE_HOST_PORT:-28083}/connectors
 
 echo "Creating target-sink connector..."
-curl -X POST -H "Content-Type: application/json" --data @debezium_json/target-sink-worker-0.json http://localhost:${DEBEZIUM_SOURCE_HOST_PORT:-28083}/connectors
+curl -X POST -H "Content-Type: application/json" --data @debezium_json/target-sink-worker-0.json http://localhost:${DEBEZIUM_SINK_HOST_PORT:-25383}/connectors
 
 echo "================================================SETUP COMPLETED================================================"
 echo "All services started and configured successfully!"

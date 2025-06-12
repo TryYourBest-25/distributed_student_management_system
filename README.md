@@ -1,140 +1,236 @@
-# Hệ thống Quản lý Điểm Sinh viên Phân tán
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![MIT License][license-shield]][license-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
 
-Hệ thống quản lý điểm sinh viên phân tán sử dụng MySQL Galera Cluster cho môn Cơ sở dữ liệu phân tán.
 
-## Kiến trúc hệ thống
 
-Hệ thống sử dụng kiến trúc Microservices với 4 node MySQL Galera Cluster:
+<!-- PROJECT LOGO -->
+<br />
+<div align="center">
 
-1. **mysql-node1**: Lưu trữ dữ liệu trung tâm (center_db)
-   - Bảng: department, course, lecturer, users
+<h3 align="center">Distributed Student Management System</h3>
 
-2. **mysql-node2**: Lưu trữ dữ liệu khoa CNTT (department_cntt_db)
-   - Bảng: class, student, credit_class, registration
-   - Bản sao: course, lecturer
+  <p align="center">
+    A microservices-based, distributed system for managing student information, academic records, and accounting. The system is designed for scalability and resilience, featuring separate user interfaces for academic and accounting staff.
+    <br />
+    <a href="https://github.com/TryYourBest-25/distributed_student_management_system"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/TryYourBest-25/distributed_student_management_system">View Demo</a>
+    &middot;
+    <a href="https://github.com/TryYourBest-25/distributed_student_management_system/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    &middot;
+    <a href="https://github.com/TryYourBest-25/distributed_student_management_system/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+  </p>
+</div>
 
-3. **mysql-node3**: Lưu trữ dữ liệu khoa VT (department_vt_db)
-   - Bảng: class, student, credit_class, registration
-   - Bản sao: course, lecturer
 
-4. **mysql-node4**: Lưu trữ dữ liệu phòng kế toán (accounting_db)
-   - Bảng: student_info, tuition_fee, tuition_payment_detail
 
-## Bảng dữ liệu
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgments">Acknowledgments</a></li>
+  </ol>
+</details>
 
-Bảng tiếng Anh tương ứng với bảng tiếng Việt:
 
-| Tiếng Anh          | Tiếng Việt      |
-|--------------------|-----------------|
-| department         | Khoa            |
-| course             | Monhoc          |
-| lecturer           | Giangvien       |
-| class              | Lop             |
-| student            | Sinhvien        |
-| credit_class       | Loptinchi       |
-| registration       | Dangky          |
-| tuition_fee        | HocPhi          |
-| tuition_payment_detail | CT_DongHocPhi |
 
-## Cơ chế đồng bộ dữ liệu
+<!-- ABOUT THE PROJECT -->
+## About The Project
 
-Hệ thống sử dụng MySQL Federated Engine để đồng bộ dữ liệu giữa các server:
+[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-1. **Federated Tables**: Tạo bảng trên một server có thể truy cập dữ liệu từ server khác
-   - Ví dụ: `course_cntt` trên server center kết nối đến `course` trên server CNTT
+This project is a Distributed Student Management System built with a microservices architecture. It aims to provide a scalable and resilient platform for educational institutions.
 
-2. **Triggers**: Kích hoạt đồng bộ dữ liệu khi có thay đổi
-   - Đồng bộ giảng viên từ center -> khoa
-   - Đồng bộ môn học từ center -> khoa
-   - Đồng bộ sinh viên từ khoa -> kế toán
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-3. **Distributed Views**: Tạo các view tổng hợp dữ liệu từ nhiều server
-   - Báo cáo điểm sinh viên theo lớp tín chỉ
-   - Báo cáo tình trạng đóng học phí
 
-4. **Stored Procedures**: Xử lý giao tác phân tán
-   - Đăng ký lớp tín chỉ
-   - Nhập điểm
-   - Đóng học phí
 
-## Cách triển khai
+### Built With
 
-### 1. Cài đặt môi trường
+This project is built with a modern tech stack including:
 
-Yêu cầu hệ thống:
-- Docker và Docker Compose
-- Bash shell
+* [![Next][Next.js]][Next-url]
+* [![React][React.js]][React-url]
+* ![.NET](https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+* ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+* ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+* ![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-000?style=for-the-badge&logo=apachekafka)
+* ![Elasticsearch](https://img.shields.io/badge/elasticsearch-%23005571.svg?style=for-the-badge&logo=elasticsearch&logoColor=white)
+* ![Keycloak](https://img.shields.io/badge/keycloak-%2300A98F.svg?style=for-the-badge&logo=keycloak&logoColor=white)
+* ![HAProxy](https://img.shields.io/badge/haproxy-%23000000.svg?style=for-the-badge&logo=haproxy&logoColor=white)
 
-### 2. Khởi tạo hệ thống
 
-```bash
-# Tạo thư mục cấu hình và script
-mkdir -p config
-mkdir -p init-scripts
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-# Cấp quyền thực thi cho script bootstrap
-chmod +x init-scripts/bootstrap.sh
 
-# Khởi động container
-docker-compose up -d
 
-# Khởi tạo Galera Cluster và cơ sở dữ liệu
-./init-scripts/bootstrap.sh
-```
+<!-- GETTING STARTED -->
+## Getting Started
 
-### 3. Kiểm tra trạng thái Galera Cluster
+To get a local copy up and running follow these simple example steps.
 
-```bash
-docker exec -it mysql-node1 mysql -u root -prootpassword -e "SHOW STATUS LIKE 'wsrep_cluster%'"
-```
+### Prerequisites
 
-### 4. Kiểm tra các bảng Federated
+This project runs on Docker. Make sure you have Docker and Docker Compose installed.
+* Docker
+  ```sh
+  https://docs.docker.com/get-docker/
+  ```
 
-```bash
-# Kiểm tra các bảng federated trên center_db
-docker exec -it mysql-node1 mysql -u root -prootpassword center_db -e "SHOW TABLES LIKE '%_cntt%'"
+### Installation
 
-# Kiểm tra các bảng federated trên department_cntt_db
-docker exec -it mysql-node2 mysql -u root -prootpassword department_cntt_db -e "SHOW TABLES LIKE '%_acc%'"
-```
+1. Clone the repo
+   ```sh
+   git clone https://github.com/TryYourBest-25/distributed_student_management_system.git
+   ```
+2. Run the development environment
+   ```sh
+   docker-compose -f compose-dev.yml up -d
+   ```
 
-### 5. Truy cập cơ sở dữ liệu
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- **Center DB**: `mysql -h 127.0.0.1 -P 3307 -u root -prootpassword center_db`
-- **CNTT DB**: `mysql -h 127.0.0.1 -P 3308 -u root -prootpassword department_cntt_db`
-- **VT DB**: `mysql -h 127.0.0.1 -P 3309 -u root -prootpassword department_vt_db`
-- **Accounting DB**: `mysql -h 127.0.0.1 -P 3310 -u root -prootpassword accounting_db`
 
-### 6. Sử dụng Stored Procedures
 
-#### Đăng ký lớp tín chỉ:
-```sql
-SET @result = 0;
-SET @message = '';
-CALL sp_register_credit_class('SV001', 1, @result, @message);
-SELECT @result, @message;
-```
+<!-- USAGE EXAMPLES -->
+## Usage
 
-#### Nhập điểm:
-```sql
-SET @result = 0;
-SET @message = '';
-CALL sp_update_student_grades(1, 'SV001', 8, 7.5, 8.0, @result, @message);
-SELECT @result, @message;
-```
+Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 
-#### Đóng học phí:
-```sql
-SET @result = 0;
-SET @message = '';
-CALL sp_pay_tuition_fee('SV001', '2023-2024', 1, 5000000, @result, @message);
-SELECT @result, @message;
-```
+_For more examples, please refer to the [Documentation](httpss://github.com/TryYourBest-25/distributed_student_management_system)_
 
-## Người phát triển
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-- [Tên của bạn]
 
-## Giấy phép
 
-Dự án này được phân phối dưới giấy phép MIT. 
+<!-- ROADMAP -->
+## Roadmap
+
+See the [open issues](https://github.com/TryYourBest-25/distributed_student_management_system/issues) for a full list of proposed features (and known issues).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- CONTRIBUTING -->
+## Contributing
+
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+Don't forget to give the project a star! Thanks again!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+### Top contributors:
+
+<a href="https://github.com/TryYourBest-25/distributed_student_management_system/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=TryYourBest-25/distributed_student_management_system" alt="contrib.rocks image" />
+</a>
+
+
+
+<!-- LICENSE -->
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- CONTACT -->
+## Contact
+
+Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@example.com
+
+Project Link: [https://github.com/TryYourBest-25/distributed_student_management_system](https://github.com/TryYourBest-25/distributed_student_management_system)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- ACKNOWLEDGMENTS -->
+## Acknowledgments
+
+* [Docker](https://www.docker.com/)
+* [Docker Compose](https://docs.docker.com/compose/)
+* [Postgres](https://www.postgresql.org/)
+* [Apache Kafka](https://kafka.apache.org/)
+* [Elasticsearch](https://www.elastic.co/elasticsearch/)
+* [Keycloak](https://www.keycloak.org/)
+* [HAProxy](https://www.haproxy.org/)
+* [.NET](https://dotnet.microsoft.com/)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[contributors-shield]: https://img.shields.io/github/contributors/TryYourBest-25/distributed_student_management_system.svg?style=for-the-badge
+[contributors-url]: https://github.com/TryYourBest-25/distributed_student_management_system/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/TryYourBest-25/distributed_student_management_system.svg?style=for-the-badge
+[forks-url]: https://github.com/TryYourBest-25/distributed_student_management_system/network/members
+[stars-shield]: https://img.shields.io/github/stars/TryYourBest-25/distributed_student_management_system.svg?style=for-the-badge
+[stars-url]: https://github.com/TryYourBest-25/distributed_student_management_system/stargazers
+[issues-shield]: https://img.shields.io/github/issues/TryYourBest-25/distributed_student_management_system.svg?style=for-the-badge
+[issues-url]: https://github.com/TryYourBest-25/distributed_student_management_system/issues
+[license-shield]: https://img.shields.io/github/license/TryYourBest-25/distributed_student_management_system.svg?style=for-the-badge
+[license-url]: https://github.com/TryYourBest-25/distributed_student_management_system/blob/master/LICENSE
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://linkedin.com/in/linkedin_username
+[product-screenshot]: images/screenshot.png
+[Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
+[Next-url]: https://nextjs.org/
+[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
+[React-url]: https://reactjs.org/
+[Vue.js]: https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D
+[Vue-url]: https://vuejs.org/
+[Angular.io]: https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
+[Angular-url]: https://angular.io/
+[Svelte.dev]: https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00
+[Svelte-url]: https://svelte.dev/
+[Laravel.com]: https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white
+[Laravel-url]: https://laravel.com
+[Bootstrap.com]: https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white
+[Bootstrap-url]: https://getbootstrap.com
+[JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
+[JQuery-url]: https://jquery.com 

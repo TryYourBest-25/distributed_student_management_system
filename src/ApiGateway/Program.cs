@@ -50,7 +50,7 @@ builder.Services.AddAuthentication(options =>
 builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true,
     reloadOnChange: true);
 
-builder.Services.AddMultiTenant<AppTenantInfo>().WithConfigurationStore();
+//builder.Services.AddMultiTenant<AppTenantInfo>().WithConfigurationStore();
 builder.Services.AddAuthorization();
 var app = builder.Build();
 
